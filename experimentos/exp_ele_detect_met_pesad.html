@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Detección de Cu(II) por Voltamperometría</title>
+  <style>
+    body {
+      background: #b8e3e9 url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Detección de metales pesados en agua: Cu(II)</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        El ion cobre (Cu²⁺) cumple funciones vitales como cofactor en enzimas redox y en la absorción de hierro. No obstante, su exceso puede generar especies reactivas de oxígeno (ROS) y provocar enfermedades como Alzheimer o fallos hepáticos.<br><br>
+        Dado su uso extendido en pesticidas, es necesario desarrollar métodos sencillos y económicos para detectar Cu²⁺. La voltamperometría permite su análisis sin necesidad de equipos complejos. En esta práctica se demostrará cómo detectar Cu²⁺ mediante técnicas electroquímicas accesibles.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Comprender la detección electroquímica de Cu²⁺ mediante voltamperometría.<br>
+        • Usar electrodos de grafito accesibles para desarrollar una metodología económica.<br>
+        • Comparar la respuesta voltamperométrica en distintos electrodos.<br>
+        • Reflexionar sobre la importancia del monitoreo de metales pesados en el ambiente y su impacto en la salud.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        <b>Electrodos:</b> grafito (mina de lápiz) como trabajo, referencia y contraelectrodo.<br>
+        <b>Soluciones:</b><br>
+        • Vinagre blanco comercial (~5% ácido acético) como electrolito soporte.<br>
+        • Sulfato de cobre (CuSO₄).<br>
+        <b>Instrumentos:</b><br>
+        • Potencióstato: Central de Paqari Openlab.<br>
+        • Celda electroquímica (eppendorf de 1 mL).<br>
+        • Papel absorbente, agua destilada.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        <b>a)</b> Preparación de la solución:<br>
+        • Mezcla vinagre con una pequeña cantidad de CuSO₄ hasta obtener una solución azul clara.<br><br>
+        <b>b)</b> Montaje del sistema electroquímico:<br>
+        • Inserta los tres electrodos de grafito en la celda con la solución.<br><br>
+        <b>c)</b> Configuración del experimento:<br>
+        • Técnica: Voltametría de onda cuadrada (SWV).<br>
+        Parámetros:<br>
+        El = 0.25 V, tl = 60 s<br>
+        Eac = -1.3 V, tac = 180 s<br>
+        Ei = -1.3 V, Ef: según curva<br>
+        Paso: 2 mV, amplitud: 100 mV, tiempo de pulso: 100 ms<br><br>
+        • Repetir el experimento 3 veces y variar la concentración de Cu²⁺.<br><br>
+        <b>d)</b> Limpieza:<br>
+        • Enjuagar electrodos con agua destilada. Eliminar residuos correctamente.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        • ¿Qué indica la aparición de un pico de reducción en el voltamperograma y cómo se relaciona con la presencia de Cu²⁺?<br>
+        • ¿Cómo influye el tipo de electrodo (grafito, oro, platino) en la forma y sensibilidad de la curva?<br>
+        • ¿Qué ventajas tiene esta técnica frente a otros métodos para detectar metales pesados?<br>
+        • ¿Podrías detectar otros metales (Pb, Hg, Cd, Fe) usando la misma técnica?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+      if (!siguiente) return;
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Síntesis electroquímica de grafeno</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+.pagina {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto; /* <-- permite el scroll vertical */
+  background-color: transparent;
+  transition: transform 0.8s ease-in-out;
+  transform-origin: left;
+  backface-visibility: hidden;
+  padding: 10px;
+  box-sizing: border-box;
+  font-size: 10pt;
+  text-align: justify;
+  display: none;
+  scrollbar-width: thin; /* Firefox */
+}
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .imagen-final {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Síntesis electroquímica de grafeno</div>
+      <div class="subtitulo">I. Introducción:</div>
+      <p>
+        ¿Qué es el grafeno y por qué es tan especial?<br>
+El grafeno es un material formado por una sola capa de átomos de carbono, organizados como un panal de abejas. Aunque es extremadamente delgado (tan solo un átomo de grosor), es muy fuerte, flexible, conduce la electricidad mejor que muchos metales y deja pasar la luz. Gracias a estas propiedades, se puede usar en pantallas táctiles, sensores, baterías, entre muchos otros. En 2010, los científicos Andre Geim y Konstantin Novoselov ganaron el Premio Nobel de Física por descubrir cómo obtener grafeno, lo que marcó un gran avance en el mundo de la ciencia de materiales.<br>
+¿Cómo se fabrica el grafeno?<br>
+Hay varios métodos para producir grafeno, muchos de ellos usando productos químicos. Sin embargo, algunos de estos procesos pueden ser caros, difíciles de controlar y dañinos para el ambiente. Por ejemplo, un método común genera mucho grafeno defectuoso porque usa compuestos muy agresivos. Una alternativa más ecológica y sencilla es la exfoliación electroquímica (TOP DOWN). Consiste en aplicar electricidad para separar las capas de grafito (el mismo material del lápiz) y obtener grafeno. Aunque esta técnica es prometedora, a veces genera defectos si se usa voltaje muy alto. Para mejorar este proceso, se desarrolló un nuevo método llamado exfoliación electroquímica en espacio confinado (EECS). Este sistema evita que las partículas se desprendan antes de tiempo y ayuda a que el grafeno se forme con mejor calidad y mayor cantidad.
+ 
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+• Aplicar el método EECS usando una solución alcalina (NaOH 10 mol/L) y bajo voltaje (3 V).<br>
+• Producir grafeno con menos defectos estructurales y mayor rendimiento (mayor calidad).<br>
+• Estudiar el mecanismo de la técnica EECS (cómo funciona el proceso internamente).<br>
+• Evaluar el uso potencial del grafeno obtenido en aplicaciones como películas conductoras transparentes.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+• Minas de lápices de grafito (2B o 4B) o grafito de pilas usadas.<br>
+• NaOH (sosa cáustica)<br>
+• Cinta adhesiva<br>
+• Alambre de acero inoxidable (Opcional)<br>
+• 2 Jeringas con filtro (Kit 3 - paqari openlab)<br>
+• 1 Puntero laser (Kit 3 - paqari openlab)<br>
+• Thinner o diluyente de esmalte<br>
+• 1 pedazo de madera, cartón o plástico<br>
+• 2 Tubos eppendorf de 1 mL <br>
+• Centrifuga casera (Kit 3 – paqari openlab)<br>
+• Cable A (Kit 3– paqari openlab)<br>
+• Papel de filtro rápido y lento (Kit 3 – paqari openlab)<br>
+• Dispositivo Central de Paqari OpenLab <br>
+
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+ <strong><em>Realiza todos los experimentos con equipos de protección personal (EPP), guantes, gafas de seguridad y bata.</em></strong><br>
+• Prepara 2 minas de grafito (o grafito de pilas usadas) lavando bien con agua destilada. Envuelve una de ellas con la cinta adhesiva, 1 cm de altura, y dejando descubierta solo la parte inferior.<br>
+• Preparar con precaución 1 mL de solución concentrada de NaOH 10M. <br>
+• Conectar las terminales del cable A a las minas de grafito, positivo (rojo) a la mina envuelta en cinta y negativo (negro) a la mina sin envolver.<br>
+• Colocar los electrodos de grafito en la celda electroquímica (tubo eppendorf de 1 mL que contiene 1 mL de la solución de NaOH 10M). <br>
+• Conectar el cable A a la Central de Paqari OpenLab (~5 V) y esperar por 1 hora mientras se lleva a cabo la exfoliación electroquímica.<br>
+• Utilizando una jeringa, filtrar con el papel de filtro rápido la dispersión del grafito exfoliado.
+• Colocar el precipitado del papel en un eppendorf, dispersarlo utilizando el thinner o removedor de esmalte y centrifugarlo.  <br>
+• Utilice el puntero laser para observar la dispersión.
+• Descartar el precipitado y transferir la dispersión a una jeringa.<br>
+• Volver a filtrar esta vez utilizando el filtro de pvdf o nylon.<br>
+• Extraer el filtro y colocarlo lenta y cuidadosamente un vaso son agua destilada, se observará como una película se deprende del filtro y queda flotando en la superficie del agua.<br>
+• Transferir esta película sobre un pedazo de plástico, madera o cartón para obtener una película de grafeno.<br>
+• Dejar secando por 24 h.<br>
+• Esta película ya puede utilizarse para otras aplicaciones como sensores, celdas solares, etc.<br>
+
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones</div>
+      <p>
+Plantea preguntas y respuestas, por ejemplo:<br>
+¿Por qué se produce la exfoliación del grafito?<br>
+¿Por qué se observa la luz del puntero laser al apuntar sobre la dispersión?<br>
+¿Por qué el grafeno queda flotando sobre el agua en la última etapa?<br>
+¿Cómo puedo determinar la calidad del grafeno que obtuve?<br>
+¿Es posible mejorar el rendimiento y calidad del grafeno?<br>
+¿Para qué aplicaciones puedo utilizar el grafeno obtenido?<br>
+    </p>
+      <div class="imagen-final">
+        <img src="picture.png" alt="Imagen final">
+      </div>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+
+</body>
+</html>

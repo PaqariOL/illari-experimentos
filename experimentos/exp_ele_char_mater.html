@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Caracterización Electroquímica de Metales</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Caracterización Electroquímica de Metales</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        En electroquímica, el electrodo es la superficie clave donde ocurren las reacciones de oxidación y reducción. Por ello, caracterizar distintos materiales de electrodos es esencial para entender cómo influyen en la velocidad, eficiencia y selectividad de estos procesos.<br><br>
+        Materiales como oro, grafito, platino y níquel son comúnmente utilizados debido a sus propiedades únicas. La caracterización electroquímica, a través de técnicas como la voltametría cíclica, permite estudiar la actividad del electrodo, su área electroactiva, estabilidad, reversibilidad de las reacciones y su comportamiento frente a distintos analitos o condiciones.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Comparar el comportamiento electroquímico de distintos materiales (oro, grafito, platino, níquel) usados como electrodos.<br>
+        • Familiarizarse con la voltametría cíclica como técnica para caracterizar superficies conductoras.<br>
+        • Observar cómo el material del electrodo afecta la respuesta voltamétrica en un electrolito ácido (vinagre).<br>
+        • Introducir conceptos como ventana electroquímica, procesos reversibles e irreversibles, y la influencia del material en la actividad electroquímica.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        <b>Electrodos de trabajo:</b> oro (Au), grafito, platino (Pt), cobre (Cu) y níquel (Ni).<br>
+        <b>Electrodo de referencia y contraelectrodo:</b> grafito (mina de lápiz).<br><br>
+        <b>Reactivos y soluciones:</b><br>
+        • Vinagre blanco comercial (~5% ácido acético).<br>
+        • Etanol (opcional, para limpieza de electrodos).<br><br>
+        <b>Instrumentos:</b><br>
+        • Central de Paqari Openlab.<br>
+        • Celda electroquímica (eppendorf de 1 mL).<br>
+        • Papel absorbente o paños de limpieza.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        <b>a)</b> Preparación del sistema electroquímico:<br>
+        • Limpia cuidadosamente los electrodos con agua destilada, etanol o lija suave.<br>
+        • Coloca vinagre comercial (~5% ácido acético) en la celda.<br><br>
+        <b>b)</b> Configuración del equipo:<br>
+        • Conecta el electrodo de trabajo (uno a la vez), el de referencia y el contraelectrodo a la Central Paqari.<br><br>
+        <b>c)</b> Medición por voltametría cíclica:<br>
+        • Realiza barridos de potencial entre -1.0 V y +1.2 V a distintas velocidades (10, 25, 50 mV/s).<br><br>
+        <b>d)</b> Repetición y comparación:<br>
+        • Repite con cada electrodo. Compara las curvas: corriente pico, forma, aparición de procesos redox.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        ¿Qué diferencias observaste en los voltamogramas entre los distintos electrodos (oro, grafito, platino, níquel)?<br>
+        ¿Cómo influye el material del electrodo en la forma y la intensidad de la corriente registrada?<br>
+        ¿Qué tipo de procesos redox (oxidación/reducción) parecen estar ocurriendo en el vinagre?<br>
+        ¿Por qué es importante usar un electrolito soporte como el vinagre en este experimento?<br>
+        ¿Qué ventajas y desventajas presenta cada tipo de electrodo en términos de estabilidad y conductividad?<br>
+        ¿Qué aplicaciones tecnológicas podrías relacionar con cada tipo de electrodo según los resultados obtenidos?<br>
+        ¿Es posible determinar si un microchip contiene solo cobre o tiene algo de oro?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+      if (!siguiente) return;
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Col morada como indicador de pH</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Col morada como indicador de pH</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        Muchas sustancias que usamos en casa pueden ser ácidas, básicas o neutras. Por ejemplo, el vinagre y el jugo de limón son ácidos, mientras que el bicarbonato de sodio y algunos jabones son básicos. Para saber qué tan ácida o básica es una sustancia usamos una escala llamada pH, que va del 0 al 14:<br>
+        • Un pH menor a 7 indica una sustancia ácida,<br>
+        • Un pH igual a 7 es neutro (como el agua pura),<br>
+        • Un pH mayor a 7 indica una sustancia básica o alcalina.<br><br>
+        Una forma divertida y sencilla de medir el pH de diferentes líquidos es usando un indicador natural. La col morada o lombarda contiene un pigmento llamado antocianina, que cambia de color según el pH del líquido en el que se encuentra. Este pigmento es sensible al pH: se vuelve rojo en ambientes ácidos, púrpura en medios neutros y verde-amarillo en medios básicos. Es una manera visual, económica y segura de entender mejor los conceptos básicos de la química. Además, verás cómo la ciencia puede estar presente en cosas tan cotidianas como una ensalada de repollo.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Comprender el concepto de pH y su escala.<br>
+        • Preparar un indicador natural a partir de col morada.<br>
+        • Identificar si una sustancia es ácida, neutra o básica según el cambio de color del indicador.<br>
+        • Comparar los resultados con una tabla de colores del pH.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Hojas de col morada (repollo morado)<br>
+        • Agua caliente<br>
+        • Vasos desechables o recipientes transparentes<br>
+        • Cucharas pequeñas<br>
+        • Cuchillo o tijera<br>
+        • Cuentagotas o pipeta<br>
+        • Filtro, colador o papel de cocina<br>
+        • Jugo de limón<br>
+        • Vinagre blanco<br>
+        • Bicarbonato de sodio disuelto en agua<br>
+        • Refresco de soda (como 7Up)<br>
+        • Detergente diluido<br>
+        • Agua del grifo<br>
+        • Paqari-Spect (Kit 2 – paqari openlab)
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        • <b>Preparar el indicador:</b><br>
+        Corta en trozos unas 5 hojas de col morada y colócalos en un recipiente. Agrega agua caliente hasta cubrir y deja reposar por 20 a 30 minutos. Cuela la mezcla para obtener un líquido morado: ¡ese es el indicador de pH!<br><br>
+        • <b>Preparar los tubos de prueba caseros:</b><br>
+        Llena vasos pequeños con un poco del líquido indicador y agrega un compuesto distinto a analizar. Observa visualmente el cambio de color y también utiliza el Paqari-Spect.<br><br>
+        • <b>Registrar los resultados:</b><br>
+        Anota el color observado en cada caso y relaciónalo con la escala de pH aproximada según los colores.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        ¿Qué compuestos fueron ácidos, básicos o neutros?<br>
+        ¿Cuál tuvo el pH más bajo? ¿Y el más alto?<br>
+        ¿Qué tan preciso crees que es el indicador de col morada?<br>
+        ¿Existe relación entre las observaciones visuales y los resultados obtenidos con el Paqari-Spect?<br>
+        ¿Se puede usar este experimento para identificar compuestos desconocidos?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

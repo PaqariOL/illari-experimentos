@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitoreo de morfología de polen</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Monitoreo de morfología de polen</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        En las plantas, para que se formen frutos o granos (como en el arroz, el maíz o el trigo), es necesario que ocurra la polinización, un proceso en el que el polen (que contiene las células masculinas) llega a la estigma (la parte femenina de la flor). Para que esto funcione bien, el polen debe ser viable (estar vivo y funcional), poder adherirse, germinar, y crecer un tubo que llegue al óvulo, además de mantenerse vivo por suficiente tiempo.<br>
+        Factores como el calor extremo, la sequía o el exceso de sal en el suelo (conocidos como estrés abiótico) pueden dañar este proceso, afectando la producción de granos. Por eso, estudiar estas características es importante para elegir buenas plantas "donantes" al crear nuevas variedades o híbridos que soporten mejor estos problemas.<br>
+        Actualmente, se usan microscopios de laboratorio para estudiar el polen, pero estos no pueden llevarse fácilmente al campo, lo que impide ver cómo se comportan realmente las plantas en su ambiente natural. Hacer estudios en tiempo real y directamente en el campo ayudaría a entender mejor cómo las plantas responden a su entorno y mejorar su reproducción.<br>
+        Esto también ayudaría a los mejoradores genéticos a seleccionar las mejores plantas de manera más rápida y confiable.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        Evaluar las características del polen y la estigma en diferentes variedades de plantas, especialmente bajo condiciones naturales y con estrés abiótico (como sequía o calor).
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Pinzas y gotero<br>
+        • Porta lentes adicional de Paqari-Scope (Kit 1 – paqari openlab)<br>
+        • Muestras de polen frescas
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        • Recoger el polen de flores recién abiertas y colocarlos en los portamuestras.<br>
+        • Colocar una gota de agua y cubrirlos con otro portamuestra, fijar con una cinta transparente.<br>
+        • Observar con Paqari-Scope.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        ¿Es posible distinguir una variación en la forma de las muestras de polen y la estigma de distintas plantas?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

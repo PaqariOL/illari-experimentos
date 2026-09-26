@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Estructura química y color</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .ecuacion {
+      text-align: center;
+      font-style: italic;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Estructura química y color</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        Los carotenoides son pigmentos que encontramos en alimentos como la zanahoria, el tomate o el maíz. Su color característico (amarillo, naranja o rojo) no es casual: está determinado por la estructura molecular de los carotenoides y, más específicamente, por la longitud de la cadena de enlaces dobles conjugados que poseen.<br><br>
+        Para entender esto, podemos usar una idea básica de la mecánica cuántica: los electrones en una molécula solo pueden estar en ciertos niveles de energía definidos. Cuando la luz incide sobre la molécula, los electrones pueden absorber fotones (luz) con una energía exacta que les permite saltar a un nivel de energía más alto. Esa energía absorbida está relacionada con la longitud de onda de la luz (es decir, su color).
+      </p>
+      <div class="ecuacion">
+        <b>E<sub>n</sub> = (n² · h²) / (8 · m · L²)</b>
+      </div>
+      <p>
+        Aquí, <i>n</i> es el número cuántico (nivel de energía), <i>h</i> es la constante de Planck, <i>m</i> es la masa del electrón, y <i>L</i> es la longitud efectiva de la molécula (que representa la cadena conjugada).<br><br>
+        Según esta fórmula, si <i>L</i> es mayor, la energía <i>E<sub>n</sub></i> es menor, lo que significa que la molécula absorberá luz de menor energía y mayor longitud de onda, como el rojo o el naranja.<br><br>
+        Por eso, cuanto más larga es la cadena de dobles enlaces conjugados en un carotenoide, más hacia el rojo será su color. Así, lo que vemos como color es en realidad una manifestación de reglas cuánticas que gobiernan el comportamiento de la luz y la materia.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Extraer betacaroteno desde una fuente natural (zanahorias) utilizando un solvente orgánico como etanol.<br>
+        • Observar y analizar el color característico del betacaroteno, relacionándolo con su capacidad para absorber ciertas longitudes de onda de la luz visible.<br>
+        • Obtener el espectro visible del extracto de betacaroteno mediante técnicas sencillas (como espectroscopía casera con un espectroscopio DIY o apps de análisis de color/luz).<br>
+        • Relacionar el color observado con la estructura molecular del betacaroteno, comprendiendo que la longitud de la cadena conjugada afecta la longitud de onda absorbida (concepto de absorción electrónica).
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Zanahorias frescas<br>
+        • Etanol (puede usarse alcohol etílico de farmacia, ≥70%, idealmente 96%)<br>
+        • Agua<br>
+        • Recipiente de vidrio resistente al calor<br>
+        • Cuchillo o rallador<br>
+        • Filtro de café o colador fino<br>
+        • Cocina o fuente de calor<br>
+        • Baño maría (puedes usar una olla con agua caliente)<br>
+        • Frasco o vaso para recolección<br>
+        • Removedor de esmalte o thinner (solo bajo supervisión de un adulto y con precauciones de seguridad)<br>
+        • Paqari-Spect (Kit 2 – paqari openlab)
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        <b>Extracción de betacaroteno de las zanahorias (precaución):</b><br>
+        Lava bien las zanahorias y córtalas en rodajas finas para facilitar la extracción. Colócalas en un frasco y añade suficiente etanol de 96º hasta cubrirlas. Coloca el frasco en un baño maría (una olla con agua caliente) y caliéntalo durante unos 10 a 15 minutos a fuego bajo. No dejes que el etanol hierva.<br><br>
+        <b>Enfriamiento y filtración:</b><br>
+        Retira el frasco del baño maría, deja que se enfríe y luego filtra la mezcla usando un papel de filtro rápido o colador para separar el líquido del sólido.<br><br>
+        <b>(Opcional) Separación con solvente no polar:</b><br>
+        Si deseas una mejor separación del caroteno, puedes añadir un poco de hexano o éter de petróleo al extracto (solo con supervisión). Mezcla suavemente y espera a que se formen dos capas. El caroteno se irá a la capa superior (menos densa).<br><br>
+        <b>Observación del betacaroteno:</b><br>
+        Coloca una proporción de esta solución en el portamuestras de Paqari-Spect y realiza un análisis.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        ¿De acuerdo con los resultados obtenidos con Paqari-Spect, en qué región del espectro visible absorbe el betacaroteno?<br>
+        ¿El color del betacaroteno está relacionado con su estructura química? (Usa la ecuación de la introducción y el tamaño de la molécula)
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

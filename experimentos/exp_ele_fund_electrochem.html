@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Voltametría cíclica</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Fundamentos de electroquímica: voltametría cíclica</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        La electroquímica es una rama de la química que estudia las reacciones que implican transferencia de electrones, y permite conectar directamente los cambios químicos con el flujo de corriente eléctrica. En química inorgánica, estas reacciones suelen involucrar procesos de oxidación (pérdida de electrones) o reducción (ganancia de electrones) de especies metálicas o complejos metálicos.<br>
+        Una técnica fundamental dentro de la electroquímica es la voltametría cíclica (CV). Esta técnica consiste en aplicar un voltaje que cambia linealmente en el tiempo a un sistema electroquímico, mientras se mide la corriente resultante. Al graficar voltaje versus corriente se obtiene una curva característica que revela información importante sobre el comportamiento redox de una sustancia, como los potenciales a los que se oxida o se reduce, y si estos procesos son reversibles.<br>
+        La voltametría cíclica es especialmente útil para investigar reacciones activadas por transferencia electrónica, como ocurre en procesos catalíticos, sensores químicos, mecanismos de reacción en materiales, y también en el desarrollo de baterías, celdas solares, electrolizadores, y tecnologías de remediación ambiental.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Comprender el principio básico de la voltametría cíclica (CV) y su aplicación en el estudio de reacciones redox.<br>
+        • Observar experimentalmente el comportamiento redox de un sistema modelo: el par Fe³⁺/Fe²⁺ (FeCl₃/FeCl₂).<br>
+        • Familiarizarse con el armado de una celda electroquímica de tres electrodos.<br>
+        • Analizar la forma de las curvas voltamétricas y determinar si la reacción es reversible, cuasi-reversible o irreversible.<br>
+        • Evaluar el efecto de la velocidad de barrido en la respuesta voltamétrica.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Solución de FeCl₃ 5 mM y FeCl₂ 5 mM en NaCl 0.1 M como electrolito soporte.<br>
+        • Electrodos de grafito (minas de lápiz) para trabajo, referencia y auxiliar.<br>
+        • Celda electroquímica (eppendorf de 1 mL).<br>
+        • Central de Paqari Openlab.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        <b>a)</b> Preparación de la celda electroquímica:<br>
+        • En el eppendorf, agregar 1 mL de la solución FeCl₃/FeCl₂ en NaCl.<br>
+        • Conectar los tres electrodos a la central: trabajo (W), referencia (R) y contraelectrodo (C).<br><br>
+        <b>b)</b> Configuración del experimento:<br>
+        • Potencial: -0.2 V a +0.8 V. Velocidad: 50 mV/s. Realizar 2 ciclos.<br><br>
+        <b>c)</b> Ejecución:<br>
+        • Realizar el experimento. Repetir con velocidades: 25, 10 y 5 mV/s.<br><br>
+        <b>d)</b> Análisis:<br>
+        • Observar los voltamogramas, identificar picos de oxidación y reducción, evaluar simetría y cambios con la velocidad.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        ¿Qué sucede con el pico de oxidación y reducción al cambiar la velocidad de barrido?<br>
+        ¿Qué indica la diferencia entre los potenciales de pico anódico y catódico?<br>
+        ¿La forma del voltamograma sugiere una reacción reversible, cuasi-reversible o irreversible? ¿Por qué?<br>
+        ¿Cuál es la función del electrolito soporte (NaCl)? ¿Qué pasaría si no se usara?<br>
+        ¿Cómo influye la concentración de los compuestos FeCl₃/FeCl₂ en la corriente medida?<br>
+        ¿Qué ventajas tiene la voltametría cíclica frente a otros métodos electroquímicos?<br>
+        ¿Cómo podrías aplicar esta técnica al estudio de procesos biológicos o tecnológicos?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+      if (!siguiente) return;
+      actual.classList.remove(\"activar\");      actual.classList.add(direccion === 'adelante' ? \"salir-adelante\" : \"salir-atras\");
+      setTimeout(() => {
+        actual.style.display = \"none\";
+        actual.classList.remove(\"salir-adelante\", \"salir-atras\");
+        siguiente.style.display = \"block\";
+        siguiente.classList.add(\"activar\");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

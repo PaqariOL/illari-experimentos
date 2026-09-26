@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Corrosión de Metales por Voltametría</title>
+  <style>
+    body {
+      background: #b8e3e9 url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Corrosión de Metales por Voltametría</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        La corrosión es un proceso electroquímico que deteriora metales por oxidación en presencia de agentes del medio, como oxígeno o sales. Afecta su resistencia y representa un alto costo económico y ambiental global.<br><br>
+        La voltametría lineal permite estudiar este fenómeno al registrar la corriente en función del potencial aplicado. A través del análisis de Tafel, se pueden extraer parámetros clave como el potencial de corrosión (Ecorr) y la densidad de corriente de corrosión (Icorr), que cuantifican la estabilidad del metal frente a la corrosión.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Evaluar la corrosión de hierro, acero y acero inoxidable en NaCl al 3% y agua de mar.<br>
+        • Registrar curvas de voltametría lineal y analizar datos con el método de Tafel.<br>
+        • Determinar los parámetros Ecorr e Icorr como indicadores de corrosión.<br>
+        • Comparar la resistencia a la corrosión entre los metales estudiados.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        <b>Electrodos de trabajo:</b> alambres de hierro, acero, acero inoxidable<br>
+        <b>Electrodos de referencia y auxiliar:</b> grafito (mina de lápiz)<br>
+        <b>Soluciones:</b> NaCl al 3% y agua de mar<br>
+        <b>Otros:</b> agua destilada, papel de lija fina, eppendorf de 1 mL<br>
+        <b>Instrumento:</b> Central de Paqari Openlab
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        <b>a)</b> Preparación del electrodo:<br>
+        • Lija el alambre metálico. Lava con agua destilada y seca.<br><br>
+        <b>b)</b> Montaje de la celda:<br>
+        • Llena el eppendorf con 1 mL de NaCl al 3% o agua de mar.<br>
+        • Inserta los tres electrodos y conéctalos a la Central de Paqari Openlab.<br><br>
+        <b>c)</b> Medición (LSV):<br>
+        • Ejecuta primero un paso de OCP durante 60 s.<br>
+        • Luego realiza una voltametría lineal:<br>
+        Ei = -0.8 V, Ef = +0.8 V, velocidad = 10 mV/s<br><br>
+        <b>d)</b> Análisis Tafel:<br>
+        • Aplica logaritmo a la corriente.<br>
+        • Grafica y selecciona región lineal para obtener Ecorr (intersección) e Icorr (valor en Ecorr).
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        • ¿Qué metal mostró menor Icorr? ¿Esto indica mayor resistencia?<br>
+        • ¿Cuál fue el Ecorr más positivo? ¿Qué implica?<br>
+        • ¿Cómo influye la aleación en la resistencia del acero inoxidable?<br>
+        • ¿Qué limitaciones tiene el método? ¿Cómo mejorarías la precisión?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+      if (!siguiente) return;
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

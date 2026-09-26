@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Respiración de las plantas</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+.pagina {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto; /* <-- permite el scroll vertical */
+  background-color: transparent;
+  transition: transform 0.8s ease-in-out;
+  transform-origin: left;
+  backface-visibility: hidden;
+  padding: 10px;
+  box-sizing: border-box;
+  font-size: 10pt;
+  text-align: justify;
+  display: none;
+  scrollbar-width: thin; /* Firefox */
+}
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .imagen-final {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Respiración de las plantas</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        Las plantas producen su propio alimento mediante un proceso llamado fotosíntesis. Usan la energía del sol para convertir el dióxido de carbono y el agua en oxígeno y azúcar. Los gases dióxido de carbono y oxígeno entran y salen de la hoja a través de pequeños orificios llamados estomas.<br><br>
+        Al colocar la hoja en agua, se atrapan las moléculas de oxígeno que salen, ¡y ahora puedes verlas! Esto puede verse mejor cuando el agua contiene bicarbonato de sodio. Los animales, como nosotros, también exhalamos dióxido de carbono (CO₂), y esto puede verse como burbujas cuando estamos bajo el agua.<br><br>
+        Los animales, como nosotros, inhalan el oxígeno que es liberado por las plantas vivas. ¡Gracias, plantas!
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Visualizar el proceso de fotosíntesis<br>
+        • Comprender el intercambio gaseoso<br>
+        • Evaluar el efecto de la luz solar y de diferentes colores de luz LED
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Hoja recién recogida<br>
+        • Bicarbonato de sodio (puede ser el que se usa para cocinar)<br>
+        • LEDs de colores y una ventana con vista al sol (opcional)<br>
+        • Paqari-Scope (Kit 1 – Paqari OpenLab)
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        <strong><em>Realiza todos los experimentos con equipos de protección personal (EPP), guantes, gafas de seguridad y bata.</em></strong><br>
+        • Recoge una hoja fresca del exterior.<br>
+        • Prepara una solución acuosa con bicarbonato de sodio.<br>
+        • Coloca la hoja fresca en el porta muestras de Paqari-Scope y coloca una gota de la solución carbonatada sobre la hoja.<br>
+        • Coloca tu celular con el lente de aumento en modo foto o grabación sobre la gota colocada en la hoja (sin tocarla). No olvides tomar el tiempo desde que colocas la gota sobre la hoja.<br>
+        • En ella podrás observar las burbujas formándose en la hoja. ¡Tu hoja ha estado “respirando”!<br>
+        • Evalúa el tiempo en que se forma la primera burbuja cuando iluminas la hoja con luz solar o LEDs de diferentes colores.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        • ¿Qué contienen las burbujas observadas?<br>
+        • ¿Por qué agregamos bicarbonato de sodio?<br>
+        • ¿Diferentes tipos de plantas se comportan de manera distinta?<br>
+        • ¿Diferentes partes de la planta se comportan de manera distinta?<br>
+        • ¿Hay diferencia al utilizar distintos tipos de luces?
+      </p>
+      <div class="imagen-final">
+        <img src="picture.png" alt="Imagen final">
+      </div>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+
+</body>
+</html>

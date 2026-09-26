@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Baterías Recargables de Ion Zinc</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Baterías Recargables de Ion Zinc</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        Las energías renovables requieren almacenamiento eficiente. Las baterías recargables de ion zinc (Zn-ion) son una alternativa segura, económica y ecológica frente a las baterías de plomo-ácido o ion-litio.<br><br>
+        Utilizan zinc metálico como ánodo, MnO₂ como cátodo y una solución de ZnSO₄ como electrolito acuoso. Son fáciles de fabricar y pueden aplicarse en viviendas, zonas rurales o almacenamiento masivo de energía renovable.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Comprender el funcionamiento básico de una batería Zn–MnO₂.<br>
+        • Explorar conceptos como ánodo, cátodo, voltaje, electrolito y capacidad.<br>
+        • Observar ciclos de carga y descarga con materiales seguros.<br>
+        • Comparar datos experimentales con principios teóricos de baterías.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Tiras de zinc (ánodo, pueden obtenerse de pilas recicladas)<br>
+        • Tiras de grafito cubiertas con MnO₂ (cátodo reciclado)<br>
+        • Electrolito: ZnSO₄ al 1 M<br>
+        • Eppendorf 1 mL<br>
+        • Separador poroso (papel filtro)<br>
+        • Central y Testeador de baterías Paqari Openlab<br>
+        • Cronómetro, balanza (opcional)
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento (parte 1)</div>
+      <p>
+        <b>Preparación del electrolito:</b> disolver ZnSO₄ en agua destilada (1 M).<br>
+        <b>Electrodos:</b><br>
+        • Ánodo: tira o disco de zinc<br>
+        • Cátodo: grafito con MnO₂ (reciclado de pila alcalina)<br>
+        <b>Armado de la celda:</b><br>
+        • Introducir ambos electrodos en el eppendorf con electrolito sin contacto directo.<br>
+        • O usar el Kit 2 con discos, separador humedecido y barras de acero.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">IV. Procedimiento (parte 2)</div>
+      <p>
+        <b>Configuración:</b><br>
+        • Conectar zinc al electrodo de trabajo y MnO₂ al contra y referencia.<br>
+        • Medir OCP (potencial de circuito abierto).<br><br>
+        <b>Voltametría cíclica:</b><br>
+        • Cátodo: Ei = +1.4 V, Ef = +1.8 V, 5 mV/s<br>
+        • Ánodo: Ei = -0.4 V, Ef = +0.5 V, 5 mV/s<br><br>
+        <b>Medidas de carga/descarga:</b><br>
+        En cada configuración (cátodo, ánodo y celda completa) aplicar corriente de ±1 mA/cm² con potenciales de corte definidos.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(5, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina6">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        • ¿Qué potencial inicial (OCP) se midió?<br>
+        • ¿Cuánto duró la descarga?<br>
+        • ¿Qué cambios físicos se observaron?<br>
+        • ¿Fue recargable? ¿Qué diferencias hubo?<br>
+        • ¿Qué ventajas ofrece el electrolito acuoso?<br>
+        • ¿Qué otros materiales podrían usarse?<br>
+        • ¿Por qué MnO₂ es adecuado como cátodo?<br>
+        • ¿Qué aplicaciones reales podrían beneficiarse?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(6, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+      if (!siguiente) return;
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Puntos cuánticos de carbono</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Síntesis química de puntos cuánticos de carbono a partir de jugo de limón</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        Los puntos de carbono (CDs) son diminutas partículas hechas principalmente de carbono que tienen propiedades ópticas muy especiales: ¡pueden brillar o emitir luz! Gracias a estas características, se han vuelto muy útiles en muchas áreas como sensores biológicos, terapias contra bacterias, virus o cáncer, y hasta en la liberación controlada de medicamentos.<br>
+        Una gran ventaja de los CDs es que pueden fabricarse de forma económica y amigable con el medio ambiente, usando ingredientes naturales como frutas, verduras, jugos, flores e incluso cáscaras de huevo. Por ejemplo, se ha usado el jugo de limón como fuente natural de ácido cítrico, un componente ideal para sintetizar CDs mediante calor.<br>
+        Sin embargo, uno de los retos actuales es que estos CDs naturales no brillan tanto como los sintéticos. Por eso, muchos estudios están buscando maneras de mejorar su intensidad de fluorescencia, probando distintos métodos de fabricación, usando solventes especiales, añadiendo átomos como nitrógeno o azufre, o modificando la superficie de las partículas.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Sintetizar puntos de carbono (CDs) a partir de una fuente natural rica en carbono, como el jugo de limón, usando un método sencillo como el calentamiento (microondas).<br>
+        • Observar las propiedades ópticas de los puntos de carbono obtenidos, especialmente su fluorescencia bajo luz ultravioleta (UV).<br>
+        • Relacionar las condiciones de síntesis (como el tiempo y la temperatura) con la intensidad del brillo de los CDs.<br>
+        • Fomentar el uso de materiales sostenibles, mostrando cómo ingredientes naturales y de bajo costo pueden ser aprovechados para crear nanomateriales.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • 10 mL de jugo de limón sin pulpa (puede usarse jugo natural colado)<br>
+        • Un vaso de precipitados o matraz de vidrio (al menos 50 mL)<br>
+        • Horno microondas doméstico (800 W)<br>
+        • Agua destilada<br>
+        • Espectroscopio Paqari-Spect (Kit 2 – paqari openlab)
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        • Vierte 10 mL de jugo de limón colado en un recipiente de vidrio resistente al calor.<br>
+        • Coloca el recipiente en el microondas (800 W) y caliéntalo por 5 minutos. Observarás un cambio de color hacia marrón oscuro o negro, lo que indica la formación de CDs.<br>
+        • Deja enfriar el residuo y luego añade 2 mL de agua destilada para disolver el producto.<br>
+        • Filtra la mezcla usando una jeringa con filtro lento para eliminar residuos.<br>
+        • Transfiere el líquido filtrado a otro recipiente limpio y añade más agua destilada hasta llegar a 10 mL.<br>
+        • (Opcional) Centrifuga por 2 minutos para separar impurezas. Deja reposar 10 minutos y extrae el líquido.<br>
+        • Evalúa los espectros visibles del líquido extraído usando el espectroscopio Paqari-Spect.<br>
+        • Utilizando el puntero láser, analiza la dispersión de los puntos cuánticos de carbono.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        ¿Qué observaste durante el calentamiento del jugo de limón?<br>
+        ¿Qué indica el color marrón oscuro o negro del producto final?<br>
+        ¿Cómo podrías comprobar si realmente se formaron puntos de carbono?<br>
+        ¿Qué ventajas tiene este método frente a otros métodos más complejos?<br>
+        ¿Es posible utilizar otros tipos de frutas para obtener CDs?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

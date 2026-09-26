@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Microesferas de Gelatina</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Microesferas de Gelatina</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        La microfluídica permite manipular fluidos en canales microscópicos. Una de sus aplicaciones destacadas es la formación de microesferas con tamaño controlado, útiles en liberación de fármacos, encapsulación celular y cosmética.<br><br>
+        Las gotas se generan controlando la interacción entre fases inmiscibles, como agua y aceite, dentro de chips tipo “T” o de flujo enfocado. Ajustando la velocidad, viscosidad y surfactantes, se puede controlar el tamaño de las microesferas.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Comprender el principio de formación de microesferas mediante microfluídica.<br>
+        • Fabricar microesferas de gelatina con aceite de silicona como fase continua.<br>
+        • Evaluar el efecto de la velocidad de flujo en el tamaño de las microesferas.<br>
+        • Observar la estabilización térmica de las microesferas formadas.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Gelatina con sabor<br>
+        • Agua destilada<br>
+        • Aceite de silicona<br>
+        • Eppendorfs adaptados (Kit 4 Paqari Openlab)<br>
+        • Dispositivo Digi Chem (Kit 4)<br>
+        • Chip microfluídico tipo T (Kit 4)<br>
+        • Refrigerador
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        • Disolver 1 g de gelatina en 10 mL de agua caliente (~50 °C). Mantener caliente.<br>
+        • Verter 0.5 mL de esta solución en un eppendorf adaptado (fase dispersa).<br>
+        • En otro eppendorf colocar 1 mL de aceite de silicona (fase continua).<br>
+        • Conectar ambos eppendorfs al Digi Chem, y desde allí al chip microfluídico tipo T (gelatina por canal central, aceite por los laterales).<br>
+        • Configurar flujo: 1 mL/h para gelatina y 3 mL/h para aceite.<br>
+        • Observar la formación de microesferas. Puede utilizarse el PaqariScope.<br>
+        • Recoger las gotas en aceite o sobre baño de hielo para solidificar.<br>
+        • (Opcional) Lavar con agua para remover el exceso de aceite.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        • ¿Cómo afecta la relación de flujos al tamaño de las microesferas?<br>
+        • ¿Qué ventajas ofrece la microfluídica frente a la emulsificación tradicional?<br>
+        • ¿Qué cuidados térmicos son importantes durante la formación?<br>
+        • ¿Cómo adaptarías esta técnica para encapsular células, fármacos u otros compuestos?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+      if (!siguiente) return;
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Síntesis de puntos cuánticos de carbono</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+.pagina {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto; /* <-- permite el scroll vertical */
+  background-color: transparent;
+  transition: transform 0.8s ease-in-out;
+  transform-origin: left;
+  backface-visibility: hidden;
+  padding: 10px;
+  box-sizing: border-box;
+  font-size: 10pt;
+  text-align: justify;
+  display: none;
+  scrollbar-width: thin; /* Firefox */
+}
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .imagen-final {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Síntesis electroquímica de puntos cuánticos de carbono</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        ¿Qué son los puntos de carbono y por qué son importantes?<br>
+        Los puntos de carbono (también conocidos como carbon dots o CDs) son partículas súper pequeñas hechas de carbono, tan diminutas que miden menos de 10 nanómetros (¡mil veces más pequeñas que el grosor de un cabello!). A pesar de su tamaño, tienen propiedades muy especiales: brillan con luz (como si fueran fluorescentes), se disuelven fácilmente en agua o alcoholes, y su superficie está llena de grupos químicos útiles. Gracias a estas cualidades, se pueden usar en campos como la energía (baterías), la medicina (imagen biomédica), y la química (catalizadores).<br>
+        ¿Cómo se hacen?<br>
+        Existen dos métodos principales:<br>
+        • Top-down: romper materiales grandes como el grafito hasta hacerlos muy pequeños.<br>
+        • Bottom-up: construirlos desde moléculas pequeñas (como glucosa o alcohol), a través de reacciones químicas.<br>
+        Diversos científicos observaron que una mezcla de etanol con hidróxido de sodio (NaOH) cambiaba de color tras varios días, descubriendo la formación de puntos de carbono. Además, si se agregaba un poco de una solución "vieja" a una nueva, la reacción ocurría más rápido, como si se activara sola (autocatálisis) y que además se podía acelerar al aplicar una corriente eléctrica debido a la transformación del etanol en aldehídos, los cuales forman cadenas de carbono que se agrupan hasta crear los CDs.<br>
+        Este tipo de investigación se relaciona con los puntos cuánticos, por los cuales el Premio Nobel de Química 2023 fue otorgado a Moungi G. Bawendi, Louis E. Brus y Alexei I. Ekimov, por descubrir cómo fabricarlos y controlar sus propiedades ópticas, abriendo nuevas posibilidades en tecnología y medicina.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Investigar el mecanismo de formación de puntos de carbono a partir de diferentes tipos de alcoholes y su relación con el contenido de agua en la solución.<br>
+        • Determinar cómo la proporción de agua afecta la síntesis y el contenido de sodio en los CDs.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Minas de lápices de grafito (2B o 4B)<br>
+        • NaOH (sosa cáustica)<br>
+        • Etanol 96º 1 mL<br>
+        • Alambre de acero inoxidable (Opcional)<br>
+        • 2 Jeringas con filtro (Kit 3 - paqari openlab)<br>
+        • 1 Puntero laser (Kit 3 - paqari openlab)<br>
+        • 2 Tubos eppendorf de 1 mL<br>
+        • Centrífuga casera (Kit 3 – paqari openlab)<br>
+        • Cable A (Kit 3– paqari openlab)<br>
+        • Papel de filtro rápido y lento (Kit 3 – paqari openlab)<br>
+        • Dispositivo Central de Paqari OpenLab
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        <strong><em>Realiza todos los experimentos con equipos de protección personal (EPP), guantes, gafas de seguridad y bata.</em></strong><br>
+        • Prepara 2 minas de grafito.<br>
+        • Preparar con precaución 1 mL de solución de etanol concentrada de NaOH 10M.<br>
+        • Conectar las terminales del cable A a las minas de grafito, positivo (rojo) a la mina con cinta y negativo (negro) a la otra.<br>
+        • Colocar los electrodos en la celda electroquímica (tubo eppendorf de 1 mL que contiene 1 mL de la solución de NaOH 10M).<br>
+        • Conectar el cable A a la Central de Paqari OpenLab (~5 V) y esperar por 1 hora mientras se llevan a cabo las reacciones electroquímicas.<br>
+        • Utilice el puntero laser para observar la dispersión de CDs.<br>
+        • Utilizando una jeringa, filtrar con el papel de filtro rápido la dispersión de los CDs.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        Plantea preguntas y respuestas, por ejemplo:<br>
+        ¿Cómo se produce la formación de los CDs?<br>
+        ¿Por qué se observa la luz del puntero laser al apuntar sobre la dispersión?<br>
+        ¿De qué color es la luz del puntero laser dentro de la dispersión?<br>
+        ¿Cómo puedo determinar la calidad de los CDs?<br>
+        ¿Es posible mejorar el rendimiento y calidad de los CDs?<br>
+        ¿Para qué aplicaciones puedo utilizar los CDs obtenidos?
+      </p>
+      <div class="imagen-final">
+        <img src="picture.png" alt="Imagen final">
+      </div>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+
+</body>
+</html>

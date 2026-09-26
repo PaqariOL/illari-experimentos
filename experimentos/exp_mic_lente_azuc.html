@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Lente de aumento con agua azucarada</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Lente de aumento con agua azucarada</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        Los microscopios son instrumentos que nos permiten observar objetos y estructuras que son demasiado pequeñas para ser vistas a simple vista. Funcionan gracias a lentes que desvían y enfocan la luz para ampliar la imagen de la muestra. Estas lentes suelen estar hechas de vidrio u otros materiales con un índice de refracción adecuado, es decir, la capacidad de doblar la luz cuando esta pasa de un medio a otro. Cuanto mayor sea la diferencia entre el índice de refracción del lente y el del aire, mayor será el efecto de enfoque y aumento.<br>
+        El agua tiene un índice de refracción mayor que el aire (1.33 frente a 1.0), lo que permite que gotas esféricas de agua actúen como lentes simples. Si a esa agua se le agrega azúcar, el índice de refracción de la solución aumenta, lo que mejora su capacidad para desviar la luz y, por tanto, su poder de aumento. Esto significa que podemos crear lentes funcionales a partir de gotas de agua azucarada.<br>
+        Al dejar caer pequeñas gotas de esta solución sobre una superficie y luego congelarlas, se obtienen lentes esféricas sólidas y temporales que pueden ser utilizadas en microscopios caseros (DIY). Esta actividad no solo demuestra principios básicos de óptica y física, sino que también permite explorar cómo diferentes materiales naturales pueden sustituir componentes científicos más costosos, haciendo la ciencia accesible y divertida para todos.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Comprender cómo funcionan las lentes y su relación con el índice de refracción de los materiales.<br>
+        • Explorar cómo el agua con azúcar cambia el índice de refracción, comparado con el agua pura.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Agua azucarada<br>
+        • Pinzas y gotero<br>
+        • Porta lentes adicional de Paqari-Scope (Kit 1 – paqari openlab)<br>
+        • Una cebolla
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        • Con el gotero colocar una gota del agua azucarada en el agujero del portalentes adicional de Paqari-Scope.<br>
+        • Dejar en el refrigerador por 1 hora, hasta que esté congelado.<br>
+        • Pelar, extraer una pequeña capa de la cebolla (epidermis) y colocar sobre el portamuestras.<br>
+        • Observar con Paqari-Scope.<br>
+        • Comparar las observaciones usando la lente de agua azucarada, y la lente regular.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        • ¿Qué partes de la célula de la cebolla son posibles de distinguir?<br>
+        • ¿Por qué varía el aumento al utilizar las lentes preparadas con las lentes regulares?<br>
+        • ¿Es posible utilizar otros líquidos para hacer nuevos lentes?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

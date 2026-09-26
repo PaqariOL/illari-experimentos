@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Formación de O2 y H2 por electrólisis</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Formación de O2 y H2 por electrólisis</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        La electrólisis del agua es un experimento muy útil para entender cómo se puede usar la electricidad para separar los elementos que forman el agua (H₂O): el hidrógeno y el oxígeno. Con la electrólisis, aplicamos electricidad a través de dos varillas llamadas electrodos que están conectadas a una batería y sumergidas en agua con un poco de sal para ayudar a conducir la corriente. Cuando la corriente pasa por el agua, el hidrógeno se libera en un electrodo (H2) y el oxígeno en el otro (O2). Esto ocurre por una reacción química donde el agua se divide gracias a la energía eléctrica.<br>
+        Este proceso es importante porque nos permite obtener hidrógeno, un gas que puede usarse como un combustible limpio, sin contaminar el ambiente. Además, es una forma sencilla de aprender conceptos importantes de química como la reacción redox (donde hay transferencia de electrones), los electrodos, y cómo la electricidad puede provocar cambios químicos.<br>
+        La electrólisis del agua no solo es un experimento interesante en clase, sino también una tecnología que se usa en el mundo real para buscar soluciones energéticas más sostenibles. ¡Y todo empieza con un poco de agua y electricidad!
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Visualizar la formación de burbujas de gas (hidrógeno y oxígeno) en los electrodos a nivel microscópico.<br>
+        • Observar el comportamiento de las partículas disueltas (como sales o bicarbonato) durante la conducción eléctrica.<br>
+        • Analizar cómo se separan y mueven los iones positivos y negativos en la solución.<br>
+        • Estudiar los cambios físicos en los electrodos, como la formación de depósitos o corrosión en ciertos materiales.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Pinzas y gotero<br>
+        • Porta lentes adicional de Paqari-Scope (Kit 1 – paqari openlab)<br>
+        • Agua potable<br>
+        • Cables de cobre delgados
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        • Colocar de forma separada los (cables) electrodos sobre el portamuestras que tiene una cavidad.<br>
+        • Agregar una gota de agua potable en la cavidad del portamuestras de tal manera que cubra ambos electrodos.<br>
+        • Conectar el otro extremo de los cables sobre una fuente de energía (pila o los terminales de la Central de Paqari Openlab).<br>
+        • Observar con Paqari-Scope en modo video.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        ¿Por qué se observa la aparición de burbujas en ambos electrodos?<br>
+        ¿Las burbujas en ambos electrodos pertenecen a los mismos compuestos?<br>
+        ¿Por qué se utiliza agua potable?<br>
+        ¿Se dará la formación de otro gas además del H2 y O2?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>

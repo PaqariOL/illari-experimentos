@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Determinación de microplásticos</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Determinación de microplásticos</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        En la vida diaria usamos muchos productos de plástico: botellas, bolsas, ropa sintética y más. Con el tiempo, estos plásticos se rompen en pedazos muy pequeños llamados microplásticos, que miden menos de 5 milímetros. Estos pueden llegar al agua, al aire, e incluso a los alimentos que consumimos. Muchos microplásticos son tan pequeños que no los podemos ver a simple vista, pero sí podemos detectarlos usando un microscopio. Para hacerlos más visibles, se puede usar un colorante, como la safranina, que tiñe las partículas y ayuda a diferenciarlas de materiales naturales como restos de hojas o fibras de algodón.<br><br>
+        Este experimento te permitirá observar posibles microplásticos que podrían estar en el agua que usamos a diario, usando herramientas simples y una técnica parecida a la que usan científicos reales. Además, aprenderás a comparar cómo se ven diferentes materiales al microscopio y cómo la ciencia puede ayudarnos a entender y cuidar mejor nuestro entorno.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        Observar y diferenciar posibles microplásticos presentes en una muestra de agua, utilizando tinción con safranina para aumentar el contraste bajo el microscopio óptico.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Muestra de agua (de río, mar, lavadora, lluvia urbana) o sintética.<br>
+        • Papel de filtro rápido y lento.<br>
+        • Jeringas con filtro<br>
+        • Frasco o vaso de precipitados<br>
+        • Portaobjetos y cubreobjetos<br>
+        • Pinzas y gotero<br>
+        • Colorante safranina (al 0.1–1%)<br>
+        • Paqari-Scope (Kit 1 – paqari openlab)<br>
+        • Agua destilada (opcional)
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        <strong><em>Realiza todos los experimentos con equipos de protección personal (EPP), guantes, gafas de seguridad y bata.</em></strong><br>
+        • Recolecta agua posiblemente contaminada con microplásticos (lavado de ropa sintética, escurrimiento urbano, agua de mar, etc.). O prepara una muestra sintética generando partículas de plástico utilizando una lija.<br>
+        • Transfiere la muestra líquida. Coloca el filtro (papel filtro o café) en la jeringa. Esto retendrá partículas sólidas, incluidos posibles microplásticos.<br>
+        • Con unas pinzas o un pincel limpio, transfiere cuidadosamente algunas partículas visibles del filtro al portaobjetos del microscopio. Si es necesario, humedece con una gota de agua destilada.<br>
+        • Agrega una gota de safranina sobre la muestra. Deja actuar por 1 a 3 minutos.<br>
+        • Elimina el exceso de colorante suavemente con papel absorbente.<br>
+        • Cubre la muestra con un cubreobjetos. Asegúrate de que no queden burbujas de aire.<br>
+        • Comienza con el aumento más bajo (4x o 10x) y aumenta progresivamente.<br>
+        • Los microplásticos suelen tener formas irregulares, colores brillantes o apariencia translúcida. La safranina puede teñir algunos materiales plásticos parcialmente, dándoles un leve tono rojizo o rosado, ayudando a distinguirlos del material orgánico.<br>
+        • Prepara una muestra con fibras naturales (como algodón o lana) teñidas igual para comparar con fibras sintéticas.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        • ¿Qué tipos de partículas observaste?<br>
+        • ¿Las partículas teñidas eran uniformes o irregulares?<br>
+        • ¿Pudiste diferenciar fibras naturales de sintéticas?<br>
+        • ¿Cómo ayuda la safranina a distinguir los microplásticos?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+
+</body>
+</html>

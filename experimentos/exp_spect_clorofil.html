@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Obteniendo clorofila de espinacas</title>
+  <style>
+    body {
+      background: #b8e3e9ff url('lib_texture.png');
+      background-repeat: repeat;
+      background-size: auto;
+      color: black;
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .contenedor {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      height: 500px;
+      perspective: 1000px;
+      padding: 5px;
+    }
+
+    .pagina {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: transparent;
+      transition: transform 0.8s ease-in-out;
+      transform-origin: left;
+      backface-visibility: hidden;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 10pt;
+      text-align: justify;
+      display: none;
+      scrollbar-width: thin;
+    }
+
+    .pagina.activar {
+      z-index: 1;
+      display: block;
+      transform: rotateY(0deg);
+    }
+
+    .pagina.salir-adelante {
+      z-index: 0;
+      transform: rotateY(-180deg);
+    }
+
+    .pagina.salir-atras {
+      z-index: 0;
+      transform: rotateY(180deg);
+    }
+
+    .titulo {
+      text-align: center;
+      font-weight: bold;
+      font-size: 14pt;
+      margin-bottom: 10px;
+    }
+
+    .subtitulo {
+      font-weight: bold;
+      font-size: 12pt;
+      margin-top: 10px;
+      margin-bottom: 5px;
+    }
+
+    .botones {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .btn {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 10pt;
+      cursor: pointer;
+      background: transparent;
+      border: 2px solid black;
+      color: black;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="contenedor">
+    <div class="pagina activar" id="pagina1">
+      <div class="titulo">Obteniendo clorofila de espinacas</div>
+      <div class="subtitulo">I. Introducción</div>
+      <p>
+        La clorofila es el pigmento responsable del color verde en las plantas y juega un rol clave en la fotosíntesis. Este pigmento absorbe principalmente luz en las regiones azul (alrededor de 430 nm) y roja (alrededor de 660 nm) del espectro visible, y refleja la verde, razón por la cual las hojas nos parecen verdes. Usando la espectroscopía visible, podemos estudiar cómo la clorofila interactúa con la luz, y comprender su estructura y función desde una perspectiva química.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(1, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina2">
+      <div class="subtitulo">II. Objetivos</div>
+      <p>
+        • Extraer clorofila de hojas verdes utilizando un solvente adecuado (etanol).<br>
+        • Observar el color característico del extracto de clorofila.<br>
+        • Medir su espectro visible con herramientas simples (espectroscopio casero o apps).<br>
+        • Identificar las longitudes de onda en las que la clorofila absorbe más luz.<br>
+        • Relacionar la absorción con su estructura molecular y función en la fotosíntesis.
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(2, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(2, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina3">
+      <div class="subtitulo">III. Materiales y equipos</div>
+      <p>
+        • Hojas verdes frescas de espinaca<br>
+        • Etanol 96 º<br>
+        • Mortero o licuadora<br>
+        • Jeringa y papel filtro<br>
+        • Recipiente de vidrio<br>
+        • Baño María (opcional, puede ser agua caliente)<br>
+        • Espectroscopio Paqari-Spect (Kit 2 – paqari openlab)
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(3, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(3, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina4">
+      <div class="subtitulo">IV. Procedimiento</div>
+      <p>
+        <b>Preparación de las hojas:</b><br>
+        Lava bien las hojas verdes y córtalas en trozos pequeños. Tritura las hojas con un poco de etanol hasta obtener una mezcla verde intensa.<br><br>
+        <b>Extracción con calor (opcional):</b><br>
+        Calienta la mezcla a baño María a unos 45–60 °C durante 5–10 minutos para mejorar la extracción.<br><br>
+        <b>Filtrado:</b><br>
+        Deja enfriar y filtra la mezcla usando la jeringa con el papel filtro para separar los sólidos.<br><br>
+        <b>Recolección del extracto:</b><br>
+        Guarda el líquido verde en un recipiente transparente.<br><br>
+        <b>Análisis del color:</b><br>
+        Usa un espectroscopio Paqari-Spect para observar el espectro visible del extracto.<br><br>
+        <b>Registro de resultados:</b><br>
+        Anota las longitudes de onda donde se observan picos de absorción (menos luz transmitida).
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(4, 'atras')">&laquo;&laquo;</button>
+        <button class="btn" onclick="pasarPagina(4, 'adelante')">&raquo;&raquo;</button>
+      </div>
+    </div>
+
+    <div class="pagina" id="pagina5">
+      <div class="subtitulo">V. Discusiones y conclusiones</div>
+      <p>
+        ¿En qué regiones del espectro se observan mayores absorciones?<br>
+        ¿Por qué la clorofila no absorbe luz verde?<br>
+        ¿Cómo se relaciona esto con la fotosíntesis?
+      </p>
+      <div class="botones">
+        <button class="btn" onclick="pasarPagina(5, 'atras')">&laquo;&laquo;</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function pasarPagina(num, direccion) {
+      const actual = document.getElementById(`pagina${num}`);
+      const siguiente = document.getElementById(`pagina${direccion === 'adelante' ? num + 1 : num - 1}`);
+      if (!siguiente) return;
+
+      actual.classList.remove("activar");
+      actual.classList.add(direccion === 'adelante' ? "salir-adelante" : "salir-atras");
+
+      setTimeout(() => {
+        actual.style.display = "none";
+        actual.classList.remove("salir-adelante", "salir-atras");
+        siguiente.style.display = "block";
+        siguiente.classList.add("activar");
+      }, 800);
+    }
+  </script>
+</body>
+</html>
