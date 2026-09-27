@@ -1,5 +1,5 @@
-# Cada vez que subes cambios, convierte el Excel y los HTML en paquete.json
-# y lo publica en GitHub Pages para que la app lo descargue.
+# Cada vez que subes cambios, convierte los experimentos (Excel + HTML) y la
+# Realidad Aumentada (ra.xlsx + modelos) y lo publica en GitHub Pages.
 name: Publicar experimentos
 
 on:
@@ -29,10 +29,23 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Instalar dependencias
-        run: pip install openpyxl beautifulsoup4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
 
-      - name: Convertir Excel + HTML
+      - name: Instalar dependencias
+        run: |
+          pip install openpyxl beautifulsoup4 pillow reportlab
+          npm install -g @gltf-transform/cli@4
+
+      # Guarda los modelos ya comprimidos para no repetir el trabajo
+      - uses: actions/cache@v4
+        with:
+          path: .cache-modelos
+          key: modelos-${{ github.run_id }}
+          restore-keys: modelos-
+
+      - name: Convertir Excel + HTML + modelos
         run: python scripts/convertir.py
 
       - uses: actions/configure-pages@v5
