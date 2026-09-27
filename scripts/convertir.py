@@ -16,6 +16,8 @@ import re
 import shutil
 import sys
 import unicodedata
+
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -305,24 +307,32 @@ def main():
         avisos.append(f"experimentos/{html_disponibles[nombre].name} no está en el Excel — no se publica.")
 
     experimentos.sort(key=lambda e: e["titulo"].lower())
-    cuerpo = json.dumps(experimentos, ensure_ascii=False, sort_keys=True)
+    print(f"✔ {len(experimentos)} experimentos")
+
+    # Realidad Aumentada (ra.xlsx), si existe
+    import convertir_ra
+    ra = convertir_ra.generar(SALIDA, avisos)
+
+    cuerpo = json.dumps({"experimentos": experimentos, "ra": ra}, ensure_ascii=False, sort_keys=True)
     version = hashlib.sha256(cuerpo.encode()).hexdigest()[:12]
 
     paquete = {
         "version": version,
         "generado": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "experimentos": experimentos,
+        "ra": ra,
     }
     (SALIDA / "paquete.json").write_text(json.dumps(paquete, ensure_ascii=False), encoding="utf-8")
     (SALIDA / "version.json").write_text(json.dumps({"version": version, "total": len(experimentos)}), encoding="utf-8")
     (SALIDA / "index.html").write_text(
         f"<!doctype html><meta charset='utf-8'><title>Illari – experimentos</title>"
-        f"<h1>Illari OpenLab Académico</h1><p>{len(experimentos)} experimentos publicados · versión {version}</p>"
+        f"<h1>Illari OpenLab Académico</h1><p>{len(experimentos)} experimentos · "
+        f"{len(ra['temas']) if ra else 0} temas de RA · versión {version}</p>"
         f"<p><a href='paquete.json'>paquete.json</a> · <a href='version.json'>version.json</a></p>",
         encoding="utf-8",
     )
 
-    print(f"✔ {len(experimentos)} experimentos publicados (versión {version})")
+    print(f"\n✔ Publicado (versión {version})")
     if avisos:
         print(f"\n⚠ {len(avisos)} aviso(s):")
         for a in avisos:

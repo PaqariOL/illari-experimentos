@@ -7,7 +7,12 @@ GitHub convierte todo automáticamente y lo publica; la app lo descarga la próx
 clasificacion.xlsx            ← la clasificación (tópicos, campos, nivel, etc.)
 experimentos/                 ← un .html por experimento
 imagenes/                     ← imágenes que usan los HTML (opcional)
-scripts/convertir.py          ← convierte todo a JSON (no hace falta tocarlo)
+ra.xlsx                       ← temas de Realidad Aumentada (modelos, marcadores, combinaciones)
+ra/info/                      ← textos de "Info" de cada tema (.html)
+ra/modelos/                   ← modelos .glb propios (opcional; si no, se toman de lvaapq/asdfgh)
+ra/marcadores/codigos/        ← imágenes base de los marcadores (no tocar)
+web/ra/                       ← visores de RA y 3D (no hace falta tocarlos)
+scripts/                      ← convierten todo (no hace falta tocarlos)
 .github/workflows/publicar.yml← publica en GitHub Pages (no hace falta tocarlo)
 ```
 
@@ -86,3 +91,30 @@ El script reconoce la estructura de tus HTML actuales:
 Las secciones cuyo título contiene *Materiales*, *Procedimiento*, *Objetivos* o
 *Discusión/Conclusiones/Preguntas* se muestran con formato especial (checklist, pasos
 numerados, preguntas). El resto se muestra como texto.
+
+---
+
+## Realidad Aumentada (S4)
+
+### Agregar o cambiar un tema
+1. Si el modelo es nuevo, súbelo a tu repositorio de modelos (lvaapq/asdfgh) **o** a `ra/modelos/` aquí.
+   No hace falta reducirlo: se comprime solo (en promedio 20 veces más liviano).
+2. Si tiene texto de información, sube su HTML a `ra/info/`.
+3. Abre `ra.xlsx` → hoja **Temas** → agrega una fila:
+   - **Marcador A…K**: `Nombre visible | archivo.glb`  (ej. `H₂ | h2_m.glb`)
+   - **Combinaciones**: `A+B = Nombre | archivo.glb` (lo que aparece al acercar los marcadores)
+   - **Info**: el nombre del HTML de `ra/info/`
+4. Sube `ra.xlsx` a la raíz reemplazando el anterior. En 2–4 minutos está en la app.
+
+### Marcadores
+Un solo juego (A–K) sirve para todos los temas: se imprime una vez.
+La hoja para imprimir se genera sola: `https://TU-USUARIO.github.io/illari-experimentos/ra/marcadores/guia_marcadores.pdf`.
+Para tener más, agrega filas en la hoja **Marcadores** (L, M… con un código libre entre 0 y 31)
+y una columna "Marcador L" en la hoja **Temas**.
+
+### Probar sin la app
+- RA:  `https://TU-USUARIO.github.io/illari-experimentos/ra/visor.html?tema=ID`
+- 3D:  `https://TU-USUARIO.github.io/illari-experimentos/ra/visor3d.html?tema=ID`
+
+El ID es el nombre del tema sin tildes, en minúsculas y con guiones
+(ej. `termoquimica-formacion-de-agua`). Todos los IDs están en `ra/temas.json` del sitio.

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Illari · Ver en 3D</title>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.3.1/dist/model-viewer.min.js"></script>
+  <style>
+    html, body { margin: 0; height: 100%; background: #B8E3E9; font-family: Arial, sans-serif; overflow: hidden; }
+    model-viewer { width: 100%; height: 100%; --poster-color: transparent; --progress-bar-color: #1B2F6E; }
+    #selector { position: fixed; left: 0; right: 0; bottom: 14px; display: flex; gap: 8px; overflow-x: auto;
+                padding: 4px 12px; scrollbar-width: none; }
+    #selector::-webkit-scrollbar { display: none; }
+    #selector button { flex: none; border: 0; border-radius: 18px; padding: 9px 14px; font-size: 14px; font-weight: bold;
+                       background: rgba(255,255,255,.75); color: #111; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+    #selector button.activo { background: #1B2F6E; color: #fff; }
+    #selector button small { font-weight: normal; opacity: .7; margin-left: 4px; }
+    #titulo { position: fixed; top: 12px; left: 64px; right: 64px; text-align: center; font-weight: bold; font-size: 16px; color: #111; }
+    .app #titulo { display: none; }
+    #ar-btn { position: absolute; right: 12px; bottom: 70px; border: 0; border-radius: 20px; padding: 10px 14px;
+              background: #1B2F6E; color: #fff; font-weight: bold; font-size: 14px; }
+    #error { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+  </style>
+</head>
+<body>
+  <div id="titulo"></div>
+  <model-viewer id="visor" camera-controls touch-action="pan-y" auto-rotate auto-rotate-delay="1500" rotation-per-second="20deg"
+                autoplay shadow-intensity="0.8" exposure="1.05" interaction-prompt="auto"
+                ar ar-modes="webxr scene-viewer quick-look" alt="Modelo 3D">
+    <button slot="ar-button" id="ar-btn">Ver en tu espacio</button>
+  </model-viewer>
+  <div id="selector"></div>
+  <div id="error"></div>
+<script type="module">
+  const q = new URLSearchParams(location.search);
+  const enApp = !!q.get('app');
+  if (enApp) document.body.classList.add('app');
+  const visor = document.getElementById('visor');
+  if (enApp) visor.removeAttribute('ar'); // en la app, el botón "Ver en tu espacio" es nativo
+
+  const fallo = (t) => { const e = document.getElementById('error'); e.textContent = t; e.style.display = 'flex'; };
+  let datos;
+  try { datos = await fetch('temas.json', { cache: 'no-cache' }).then((r) => r.json()); }
+  catch { fallo('No se pudo cargar el catálogo. Revisa tu conexión.'); }
+  const tema = datos?.temas.find((t) => t.id === q.get('tema'));
+  if (datos && !tema) fallo('Tema no encontrado.');
+
+  if (tema) {
+    document.title = tema.titulo;
+    document.getElementById('titulo').textContent = tema.titulo;
+    const lista = [
+      ...tema.modelos.filter((m) => m.archivo).map((m) => ({ ...m, etiqueta: m.nombre })),
+      ...tema.combinaciones.map((c) => ({ ...c, etiqueta: c.nombre })),
+    ];
+    const sel = document.getElementById('selector');
+    const mostrar = (i) => {
+      const m = lista[i];
+      const abs = new URL('../' + m.archivo, location.href).href;
+      visor.src = abs;
+      visor.alt = m.etiqueta;
+      sel.querySelectorAll('button').forEach((b, k) => b.classList.toggle('activo', k === i));
+      window.ReactNativeWebView?.postMessage(JSON.stringify({ tipo: 'modelo', url: abs, nombre: m.etiqueta }));
+    };
+    lista.forEach((m, i) => {
+      const b = document.createElement('button');
+      b.innerHTML = '';
+      b.textContent = m.etiqueta;
+      const s = document.createElement('small'); s.textContent = m.kb >= 1024 ? (m.kb / 1024).toFixed(1) + ' MB' : m.kb + ' KB';
+      b.appendChild(s);
+      b.onclick = () => mostrar(i);
+      sel.appendChild(b);
+    });
+    if (lista.length < 2) sel.style.display = 'none';
+    visor.addEventListener('error', () => fallo('No se pudo cargar el modelo.'));
+    // Si el modelo trae varias animaciones (Blender), se reproducen todas a la vez
+    visor.addEventListener('load', () => {
+      const anims = visor.availableAnimations || [];
+      if (anims.length > 1 && visor.appendAnimation) {
+        anims.slice(1).forEach((nombre) => visor.appendAnimation(nombre, { repetitionCount: Infinity }));
+      }
+      if (anims.length) visor.play();
+    });
+    mostrar(0);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Illari · Realidad Aumentada</title>
+  <!-- Versiones fijas: evita que un cambio externo rompa la RA -->
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe-v1.4.2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js@3.4.5/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.5.4/dist/aframe-extras.min.js"></script>
+  <style>
+    html { background: #000; }
+    body { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; }
+    .capa { position: fixed; left: 0; right: 0; z-index: 10; pointer-events: none; }
+    #chips { top: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 0 60px; }
+    .chip { background: rgba(0,0,0,.55); color: #fff; border-radius: 14px; padding: 4px 10px; font-size: 13px; transition: background .2s; }
+    .chip b { color: #FFD166; }
+    .chip.visto { background: rgba(46,125,50,.9); }
+    .muchos .chip .n { display: none; }            /* con muchos marcadores: solo la letra… */
+    .muchos .chip.visto .n { display: inline; }    /* …y el nombre de los que la cámara ve */
+    #aviso { bottom: 24px; text-align: center; }
+    #aviso span { display: inline-block; background: rgba(0,0,0,.6); color: #fff; padding: 8px 14px; border-radius: 18px; font-size: 14px; }
+    #toast { top: 45%; text-align: center; opacity: 0; transition: opacity .4s; }
+    #toast span { display: inline-block; background: #1B2F6E; color: #fff; padding: 10px 18px; border-radius: 20px; font-size: 17px; font-weight: bold; }
+    #carga { position: fixed; inset: 0; z-index: 20; background: #B8E3E9; display: flex; flex-direction: column;
+             align-items: center; justify-content: center; gap: 14px; color: #111; text-align: center; padding: 24px; }
+    #carga .barra { width: 60%; height: 6px; background: rgba(0,0,0,.12); border-radius: 3px; overflow: hidden; }
+    #carga .barra div { height: 100%; width: 0; background: #1B2F6E; transition: width .3s; }
+    #info-btn { position: fixed; right: 12px; bottom: 76px; z-index: 11; width: 44px; height: 44px; border-radius: 22px; border: 0;
+                background: #95B3B8; font: bold 20px Georgia, serif; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+    #info { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; max-height: 55%; overflow: auto; background: #B8E3E9;
+            padding: 16px 18px 28px; border-radius: 16px 16px 0 0; transform: translateY(105%); transition: transform .3s; }
+    #info.abierto { transform: none; }
+    #info h2 { margin: 0 0 8px; font-size: 17px; text-align: center; }
+    #info p, #info li { font-size: 15px; line-height: 1.45; }
+    #info .ec { text-align: center; font-weight: bold; margin: 8px 0; }
+    #info .cerrar { position: absolute; right: 12px; top: 10px; border: 0; background: none; font-size: 20px; }
+    .app #info-btn { display: none; } /* dentro de la app, la info la muestra la app */
+    .arjs-loader { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="carga"><div id="carga-texto">Cargando…</div><div class="barra"><div id="progreso"></div></div></div>
+  <div id="chips" class="capa"></div>
+  <div id="toast" class="capa"><span id="toast-texto"></span></div>
+  <div id="aviso" class="capa"><span id="aviso-texto">Apunta la cámara a los marcadores</span></div>
+  <button id="info-btn" aria-label="Información">i</button>
+  <div id="info"><button class="cerrar" aria-label="Cerrar">✕</button><div id="info-contenido"></div></div>
+
+<script>
+(async function () {
+  const q = new URLSearchParams(location.search);
+  if (q.get('app')) document.body.classList.add('app');
+  const $ = (id) => document.getElementById(id);
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const error = (msg) => { $('carga-texto').innerHTML = msg; $('progreso').parentElement.style.display = 'none'; };
+
+  // ---------- Datos del tema
+  let datos, tema;
+  try {
+    datos = await fetch('temas.json', { cache: 'no-cache' }).then((r) => r.json());
+    tema = datos.temas.find((t) => t.id === q.get('tema'));
+  } catch (e) { return error('No se pudo cargar el catálogo. Revisa tu conexión.'); }
+  if (!tema) return error('Tema no encontrado.');
+  document.title = tema.titulo;
+  const marcadores = Object.fromEntries(datos.marcadores.map((m) => [m.id, m]));
+  const url = (ruta) => '../' + ruta;
+
+  // ---------- Info
+  $('info-contenido').innerHTML = '<h2>' + esc(tema.titulo) + '</h2>' + (tema.info || []).map((b) =>
+    b.t === 'ecuacion' ? '<div class="ec">' + esc(b.texto) + '</div>' :
+    b.t === 'item' ? '<li>' + esc(b.texto) + '</li>' :
+    b.t === 'sub' ? '<h3>' + esc(b.texto) + '</h3>' : '<p>' + esc(b.texto) + '</p>').join('');
+  $('info-btn').onclick = () => $('info').classList.add('abierto');
+  $('info').querySelector('.cerrar').onclick = () => $('info').classList.remove('abierto');
+  if (!(tema.info || []).length) $('info-btn').style.display = 'none';
+
+  // ---------- Chips: qué marcador muestra qué
+  $('chips').innerHTML = tema.modelos.map((m) =>
+    '<span class="chip" id="chip-' + m.marcador + '"><b>' + m.marcador + '</b><span class="n"> ' + esc(m.nombre) + '</span></span>').join('');
+  if (tema.modelos.length > 5) $('chips').classList.add('muchos');
+  if (tema.combinaciones.length) {
+    $('aviso-texto').textContent = tema.combinaciones.length <= 3
+      ? 'Acerca ' + tema.combinaciones.map((c) => c.marcadores.join(' + ')).join(' · ') + ' para combinarlos'
+      : (tema.descripcion || 'Acerca los marcadores para combinarlos');
+  }
+
+  // ---------- Escena
+  const archivos = [...new Set([...tema.modelos, ...tema.combinaciones].map((m) => m.archivo).filter(Boolean))];
+
+  // Marcador sin modelo: se muestra su nombre sobre el papel (imagen dibujada en un canvas)
+  function etiquetaImagen(texto) {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 160;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(27,47,110,0.9)'; g.beginPath();
+    if (g.roundRect) g.roundRect(0, 0, 512, 160, 40); else g.rect(0, 0, 512, 160); g.fill();
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    let tam = 64; g.font = 'bold ' + tam + 'px Arial';
+    while (g.measureText(texto).width > 470 && tam > 24) { tam -= 4; g.font = 'bold ' + tam + 'px Arial'; }
+    g.fillText(texto, 256, 82);
+    return c.toDataURL();
+  }
+  const idAsset = (archivo) => 'a' + archivos.indexOf(archivo);
+  const giro = tema.girar ? ' animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear"' : '';
+  const etiquetas = []; // imágenes de los marcadores sin modelo (van en <a-assets>)
+  const modelo = (m, escala) => !m.archivo
+    ? '<a-entity class="gesto"><a-plane rotation="-90 0 0" position="0 0.02 0" width="1.2" height="0.375"' +
+      ' material="shader: flat; transparent: true; src: #et' + (etiquetas.push(m.nombre) - 1) + '"></a-plane></a-entity>'
+    : '<a-entity class="gesto"><a-entity' + giro + '><a-entity gltf-model="#' + idAsset(m.archivo) + '"' +
+      (m.animado ? ' animation-mixer' : '') + ' scale="' + escala + ' ' + escala + ' ' + escala + '"></a-entity></a-entity></a-entity>';
+
+  const esc0 = 0.8 * tema.escala;
+  let cuerpo = '';
+  for (const m of tema.modelos) {
+    const mk = marcadores[m.marcador];
+    const tipo = mk.tipo === 'codigo' ? 'type="barcode" value="' + mk.codigo + '"' : 'type="pattern" url="' + url(mk.patron) + '"';
+    cuerpo += '<a-marker id="mk-' + m.marcador + '" ' + tipo + ' smooth="true" smoothCount="5" smoothTolerance="0.01" smoothThreshold="2" emitevents="true">' +
+      modelo(m, esc0) + '</a-marker>';
+  }
+  tema.combinaciones.forEach((c, i) => { cuerpo += '<a-entity id="comb-' + i + '" visible="false">' + modelo(c, tema.escala) + '</a-entity>'; });
+
+  let html = '<a-scene embedded vr-mode-ui="enabled: false" renderer="antialias: true; logarithmicDepthBuffer: true"' +
+    ' gltf-model="dracoDecoderPath: https://www.gstatic.com/draco/versioned/decoders/1.5.6/"' +
+    ' arjs="sourceType: webcam; cameraParametersUrl: camera_para.dat; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: ' + datos.tipoCodigo + ';">' +
+    '<a-assets timeout="60000">' + archivos.map((a) => '<a-asset-item id="' + idAsset(a) + '" src="' + url(a) + '"></a-asset-item>').join('') +
+    etiquetas.map((t, i) => '<img id="et' + i + '" src="' + etiquetaImagen(t) + '">').join('') + '</a-assets>' +
+    cuerpo + '<a-entity camera></a-entity></a-scene>';
+
+  // ---------- Combinaciones: se revisan en cada cuadro
+  AFRAME.registerComponent('illari-combinar', {
+    init() {
+      this.activa = tema.combinaciones.map(() => false);
+      this.mk = Object.fromEntries(tema.modelos.map((m) => [m.marcador, document.getElementById('mk-' + m.marcador)]));
+      this.comb = tema.combinaciones.map((_, i) => document.getElementById('comb-' + i));
+      this.v = new THREE.Vector3();
+    },
+    tick() {
+      const ocultos = new Set();
+      tema.combinaciones.forEach((c, i) => {
+        const els = c.marcadores.map((id) => this.mk[id]);
+        let ok = els.every((e) => e && e.object3D.visible);
+        if (ok) {
+          const pos = els.map((e) => e.object3D.position);
+          for (let a = 0; a < pos.length && ok; a++)
+            for (let b = a + 1; b < pos.length; b++) if (pos[a].distanceTo(pos[b]) > tema.distancia) { ok = false; break; }
+          if (ok) {
+            this.v.set(0, 0, 0); pos.forEach((p) => this.v.add(p)); this.v.divideScalar(pos.length);
+            this.comb[i].object3D.position.copy(this.v);
+            this.comb[i].object3D.quaternion.copy(els[0].object3D.quaternion);
+            c.marcadores.forEach((id) => ocultos.add(id));
+          }
+        }
+        this.comb[i].object3D.visible = ok;
+        if (ok && !this.activa[i]) avisar('¡' + c.nombre + '!');
+        this.activa[i] = ok;
+      });
+      for (const [id, el] of Object.entries(this.mk)) {
+        const g = el.querySelector('.gesto');
+        if (g) g.object3D.visible = !ocultos.has(id);
+      }
+    },
+  });
+
+  // ---------- Gestos: arrastrar para girar, pellizcar para cambiar tamaño
+  let rotY = 0, escalaGesto = 1, x0 = null, d0 = null, e0 = 1;
+  const aplicarGesto = () => document.querySelectorAll('.gesto').forEach((g) => {
+    g.object3D.rotation.y = rotY; g.object3D.scale.setScalar(escalaGesto);
+  });
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  window.addEventListener('touchstart', (e) => {
+    if (e.target.closest('#info, #info-btn')) return;
+    if (e.touches.length === 1) x0 = e.touches[0].clientX;
+    if (e.touches.length === 2) { d0 = dist(e.touches); e0 = escalaGesto; }
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1 && x0 !== null) { rotY += (e.touches[0].clientX - x0) * 0.01; x0 = e.touches[0].clientX; }
+    if (e.touches.length === 2 && d0) escalaGesto = Math.min(4, Math.max(0.3, e0 * dist(e.touches) / d0));
+    aplicarGesto();
+  }, { passive: true });
+  window.addEventListener('touchend', () => { x0 = null; d0 = null; }, { passive: true });
+
+  let tt;
+  function avisar(t) {
+    $('toast-texto').textContent = t; $('toast').style.opacity = 1;
+    clearTimeout(tt); tt = setTimeout(() => ($('toast').style.opacity = 0), 2000);
+  }
+
+  // ---------- Insertar escena y seguir la carga
+  document.body.insertAdjacentHTML('beforeend', html);
+  const escena = document.querySelector('a-scene');
+  escena.setAttribute('illari-combinar', '');
+  window.illari = { tema, marcadoresVistos: new Set() };
+
+  const items = [...document.querySelectorAll('a-asset-item')];
+  let listos = 0;
+  $('carga-texto').textContent = 'Cargando modelos (' + (archivos.length) + ')…';
+  items.forEach((it) => it.addEventListener('loaded', () => {
+    listos++; $('progreso').style.width = (100 * listos / items.length) + '%';
+  }));
+  escena.addEventListener('loaded', () => { $('carga').style.display = 'none'; });
+  window.addEventListener('camera-error', () =>
+    error('No se pudo usar la cámara.<br><br>Revisa que la app o el navegador tengan permiso de cámara.'));
+
+  document.querySelectorAll('a-marker').forEach((m) => {
+    const id = m.id.slice(3);
+    m.addEventListener('markerFound', () => { $('chip-' + id)?.classList.add('visto'); window.illari.marcadoresVistos.add(id); });
+    m.addEventListener('markerLost', () => $('chip-' + id)?.classList.remove('visto'));
+  });
+})();
+</script>
+</body>
+</html>

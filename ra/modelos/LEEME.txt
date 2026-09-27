@@ -1,0 +1,2 @@
+Pon aquí modelos .glb propios (opcional).
+Si un modelo no está aquí, se busca en github.com/lvaapq/asdfgh.
