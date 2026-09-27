@@ -34,8 +34,8 @@
     #info p, #info li { font-size: 15px; line-height: 1.45; }
     #info .ec { text-align: center; font-weight: bold; margin: 8px 0; }
     #info .cerrar { position: absolute; right: 12px; top: 10px; border: 0; background: none; font-size: 20px; }
-    #chips { padding: 0 64px; top: 62px; }
-    #logo { position: fixed; top: 10px; left: 10px; z-index: 11; height: 44px; max-width: 45%; object-fit: contain;
+    #chips { top: 10px; left: 64px; right: 64px; min-height: 44px; align-items: center; padding: 0; }
+    #logo { position: fixed; top: 10px; left: 10px; z-index: 11; height: 44px; max-width: 38%; object-fit: contain;
             pointer-events: none; opacity: .95; }
     #barra { position: fixed; left: 0; right: 0; bottom: 24px; z-index: 11; display: flex; justify-content: center;
              align-items: center; gap: 28px; }
@@ -56,7 +56,8 @@
   <div id="chips" class="capa"></div>
   <div id="toast" class="capa"><span id="toast-texto"></span></div>
   <div id="aviso" class="capa"><span id="aviso-texto">Apunta la cámara a los marcadores</span></div>
-  <img id="logo" src="logo_illari_ar.png" alt="Illari OpenLab" onerror="this.remove()">
+  <img id="logo" src="logo_illari_ar.png" alt="Illari OpenLab" onerror="this.remove()"
+       onload="document.getElementById('chips').style.left = (this.getBoundingClientRect().right + 8) + 'px'">
   <button id="info-btn" aria-label="Información">i</button>
   <div id="barra">
     <button id="btn-voltear" aria-label="Voltear cámara">
@@ -289,9 +290,13 @@
     };
     if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
       try { await navigator.share(datos); } catch (e) { /* el usuario canceló */ }
-    } else {
-      descargar(archivo);
-      avisar('Captura guardada: compártela desde tu galería');
+      return;
+    }
+    // Este navegador no comparte imágenes (ej. Firefox): se guarda la captura
+    descargar(archivo);
+    avisar('Captura guardada en Descargas. Adjúntala desde tu galería al compartir');
+    if (navigator.share) {
+      setTimeout(() => navigator.share({ title: datos.title, text: datos.text }).catch(() => {}), 1200);
     }
   };
 
