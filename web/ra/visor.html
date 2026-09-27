@@ -34,7 +34,9 @@
     #info p, #info li { font-size: 15px; line-height: 1.45; }
     #info .ec { text-align: center; font-weight: bold; margin: 8px 0; }
     #info .cerrar { position: absolute; right: 12px; top: 10px; border: 0; background: none; font-size: 20px; }
-    #chips { padding: 0 64px; }
+    #chips { padding: 0 64px; top: 62px; }
+    #logo { position: fixed; top: 10px; left: 10px; z-index: 11; height: 44px; max-width: 45%; object-fit: contain;
+            pointer-events: none; opacity: .95; }
     #barra { position: fixed; left: 0; right: 0; bottom: 24px; z-index: 11; display: flex; justify-content: center;
              align-items: center; gap: 28px; }
     #barra button { border: 0; background: rgba(0,0,0,.5); color: #fff; width: 52px; height: 52px; border-radius: 26px;
@@ -54,6 +56,7 @@
   <div id="chips" class="capa"></div>
   <div id="toast" class="capa"><span id="toast-texto"></span></div>
   <div id="aviso" class="capa"><span id="aviso-texto">Apunta la cámara a los marcadores</span></div>
+  <img id="logo" src="logo_illari_ar.png" alt="Illari OpenLab" onerror="this.remove()">
   <button id="info-btn" aria-label="Información">i</button>
   <div id="barra">
     <button id="btn-voltear" aria-label="Voltear cámara">
@@ -252,6 +255,13 @@
     if (video) { const r = video.getBoundingClientRect(); g.drawImage(video, r.left, r.top, r.width, r.height); }
     escena.renderer.render(escena.object3D, escena.camera);
     const r3 = lienzo3d.getBoundingClientRect(); g.drawImage(lienzo3d, r3.left, r3.top, r3.width, r3.height);
+    // Logo en la esquina superior (mismo lugar y tamaño que en pantalla)
+    const logo = document.getElementById('logo');
+    if (logo && logo.complete && logo.naturalWidth) {
+      const rl = logo.getBoundingClientRect();
+      const esc = Math.min(rl.width / logo.naturalWidth, rl.height / logo.naturalHeight);
+      g.drawImage(logo, rl.left, rl.top, logo.naturalWidth * esc, logo.naturalHeight * esc);
+    }
     const marca = 'Illari OpenLab Académico · ' + tema.titulo;
     g.font = 'bold 13px Arial'; const ancho = Math.min(g.measureText(marca).width + 20, W - 20);
     g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(10, H - 38, ancho, 26);
