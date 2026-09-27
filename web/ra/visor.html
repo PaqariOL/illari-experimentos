@@ -17,7 +17,7 @@
     .chip.visto { background: rgba(46,125,50,.9); }
     .muchos .chip .n { display: none; }            /* con muchos marcadores: solo la letra… */
     .muchos .chip.visto .n { display: inline; }    /* …y el nombre de los que la cámara ve */
-    #aviso { bottom: 24px; text-align: center; }
+    #aviso { bottom: 108px; text-align: center; }
     #aviso span { display: inline-block; background: rgba(0,0,0,.6); color: #fff; padding: 8px 14px; border-radius: 18px; font-size: 14px; }
     #toast { top: 45%; text-align: center; opacity: 0; transition: opacity .4s; }
     #toast span { display: inline-block; background: #1B2F6E; color: #fff; padding: 10px 18px; border-radius: 20px; font-size: 17px; font-weight: bold; }
@@ -25,7 +25,7 @@
              align-items: center; justify-content: center; gap: 14px; color: #111; text-align: center; padding: 24px; }
     #carga .barra { width: 60%; height: 6px; background: rgba(0,0,0,.12); border-radius: 3px; overflow: hidden; }
     #carga .barra div { height: 100%; width: 0; background: #1B2F6E; transition: width .3s; }
-    #info-btn { position: fixed; right: 12px; bottom: 76px; z-index: 11; width: 44px; height: 44px; border-radius: 22px; border: 0;
+    #info-btn { position: fixed; right: 12px; top: 10px; z-index: 11; width: 44px; height: 44px; border-radius: 22px; border: 0;
                 background: #95B3B8; font: bold 20px Georgia, serif; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
     #info { position: fixed; left: 0; right: 0; bottom: 0; z-index: 12; max-height: 55%; overflow: auto; background: #B8E3E9;
             padding: 16px 18px 28px; border-radius: 16px 16px 0 0; transform: translateY(105%); transition: transform .3s; }
@@ -34,6 +34,17 @@
     #info p, #info li { font-size: 15px; line-height: 1.45; }
     #info .ec { text-align: center; font-weight: bold; margin: 8px 0; }
     #info .cerrar { position: absolute; right: 12px; top: 10px; border: 0; background: none; font-size: 20px; }
+    #chips { padding: 0 64px; }
+    #barra { position: fixed; left: 0; right: 0; bottom: 24px; z-index: 11; display: flex; justify-content: center;
+             align-items: center; gap: 28px; }
+    #barra button { border: 0; background: rgba(0,0,0,.5); color: #fff; width: 52px; height: 52px; border-radius: 26px;
+                    display: flex; align-items: center; justify-content: center; padding: 0; }
+    #barra button svg { width: 26px; height: 26px; }
+    #barra #btn-foto { width: 70px; height: 70px; border-radius: 35px; background: #fff; border: 5px solid rgba(255,255,255,.5);
+                       background-clip: padding-box; }
+    #barra #btn-foto svg { color: #1B2F6E; width: 30px; height: 30px; }
+    #barra button:active { transform: scale(.92); }
+    #flash { position: fixed; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; transition: opacity .25s; }
     .app #info-btn { display: none; } /* dentro de la app, la info la muestra la app */
     .arjs-loader { display: none !important; }
   </style>
@@ -44,6 +55,23 @@
   <div id="toast" class="capa"><span id="toast-texto"></span></div>
   <div id="aviso" class="capa"><span id="aviso-texto">Apunta la cámara a los marcadores</span></div>
   <button id="info-btn" aria-label="Información">i</button>
+  <div id="barra">
+    <button id="btn-voltear" aria-label="Voltear cámara">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+        <path d="M9 13a3 3 0 0 1 5.2-2M15 13a3 3 0 0 1-5.2 2"/><path d="M14.5 9.5v2h-2M9.5 16.5v-2h2"/></svg>
+    </button>
+    <button id="btn-foto" aria-label="Tomar captura">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>
+    </button>
+    <button id="btn-compartir" aria-label="Capturar y compartir">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+        <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+    </button>
+  </div>
+  <div id="flash"></div>
   <div id="info"><button class="cerrar" aria-label="Cerrar">✕</button><div id="info-contenido"></div></div>
 
 <script>
@@ -121,7 +149,7 @@
   }
   tema.combinaciones.forEach((c, i) => { cuerpo += '<a-entity id="comb-' + i + '" visible="false">' + modelo(c, tema.escala) + '</a-entity>'; });
 
-  let html = '<a-scene embedded vr-mode-ui="enabled: false" renderer="antialias: true; logarithmicDepthBuffer: true"' +
+  let html = '<a-scene embedded vr-mode-ui="enabled: false" renderer="antialias: true; logarithmicDepthBuffer: true; preserveDrawingBuffer: true"' +
     ' gltf-model="dracoDecoderPath: https://www.gstatic.com/draco/versioned/decoders/1.5.6/"' +
     ' arjs="sourceType: webcam; cameraParametersUrl: camera_para.dat; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: ' + datos.tipoCodigo + ';">' +
     '<a-assets timeout="60000">' + archivos.map((a) => '<a-asset-item id="' + idAsset(a) + '" src="' + url(a) + '"></a-asset-item>').join('') +
@@ -192,6 +220,70 @@
   const escena = document.querySelector('a-scene');
   escena.setAttribute('illari-combinar', '');
   window.illari = { tema, marcadoresVistos: new Set() };
+
+  // ---------- Voltear cámara (trasera ↔ frontal)
+  let camara = 'environment';
+  $('btn-voltear').onclick = async () => {
+    const video = document.querySelector('video');
+    if (!video || !navigator.mediaDevices) return;
+    const nueva = camara === 'environment' ? 'user' : 'environment';
+    try {
+      const flujo = await navigator.mediaDevices.getUserMedia({
+        audio: false, video: { facingMode: { ideal: nueva }, width: { ideal: 640 }, height: { ideal: 480 } },
+      });
+      (video.srcObject?.getTracks() || []).forEach((t) => t.stop());
+      video.srcObject = flujo;
+      await video.play();
+      camara = nueva;
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+      avisar(nueva === 'user' ? 'Cámara frontal' : 'Cámara trasera');
+    } catch (e) { avisar('Este celular no tiene otra cámara disponible'); }
+  };
+
+  // ---------- Captura: imagen de la cámara + modelos 3D + marca de Illari
+  async function capturar() {
+    const video = document.querySelector('video');
+    const lienzo3d = escena.canvas;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = window.innerWidth, H = window.innerHeight;
+    const c = document.createElement('canvas'); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
+    const g = c.getContext('2d'); g.scale(dpr, dpr);
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    if (video) { const r = video.getBoundingClientRect(); g.drawImage(video, r.left, r.top, r.width, r.height); }
+    escena.renderer.render(escena.object3D, escena.camera);
+    const r3 = lienzo3d.getBoundingClientRect(); g.drawImage(lienzo3d, r3.left, r3.top, r3.width, r3.height);
+    const marca = 'Illari OpenLab Académico · ' + tema.titulo;
+    g.font = 'bold 13px Arial'; const ancho = Math.min(g.measureText(marca).width + 20, W - 20);
+    g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(10, H - 38, ancho, 26);
+    g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.fillText(marca, 20, H - 25, W - 40);
+    $('flash').style.opacity = 0.8; setTimeout(() => ($('flash').style.opacity = 0), 150);
+    const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.92));
+    return new File([blob], 'illari-' + tema.id + '-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+  }
+  function descargar(archivo) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(archivo); a.download = archivo.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  }
+  $('btn-foto').onclick = async () => {
+    try { descargar(await capturar()); avisar('Captura guardada en Descargas'); }
+    catch (e) { avisar('No se pudo tomar la captura'); }
+  };
+  $('btn-compartir').onclick = async () => {
+    let archivo;
+    try { archivo = await capturar(); } catch (e) { return avisar('No se pudo tomar la captura'); }
+    const datos = {
+      files: [archivo], title: tema.titulo,
+      text: tema.titulo + ' en Realidad Aumentada con Illari OpenLab Académico 🔬 https://paqariol.github.io/es/resources/apps/',
+    };
+    if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+      try { await navigator.share(datos); } catch (e) { /* el usuario canceló */ }
+    } else {
+      descargar(archivo);
+      avisar('Captura guardada: compártela desde tu galería');
+    }
+  };
 
   const items = [...document.querySelectorAll('a-asset-item')];
   let listos = 0;
