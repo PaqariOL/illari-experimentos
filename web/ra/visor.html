@@ -9,8 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js@3.4.5/aframe/build/aframe-ar.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.5.4/dist/aframe-extras.min.js"></script>
   <style>
-    html { background: #000; }
-    body { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; }
+    html, body { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; background: transparent; }
     .capa { position: fixed; left: 0; right: 0; z-index: 10; pointer-events: none; }
     #chips { top: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 0 60px; }
     .chip { background: rgba(0,0,0,.55); color: #fff; border-radius: 14px; padding: 4px 10px; font-size: 13px; transition: background .2s; }
@@ -53,7 +52,10 @@
   if (q.get('app')) document.body.classList.add('app');
   const $ = (id) => document.getElementById(id);
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const error = (msg) => { $('carga-texto').innerHTML = msg; $('progreso').parentElement.style.display = 'none'; };
+  const error = (msg) => {
+    $('carga').style.display = 'flex';
+    $('carga-texto').innerHTML = msg; $('progreso').parentElement.style.display = 'none';
+  };
 
   // ---------- Datos del tema
   let datos, tema;
@@ -198,6 +200,13 @@
     listos++; $('progreso').style.width = (100 * listos / items.length) + '%';
   }));
   escena.addEventListener('loaded', () => { $('carga').style.display = 'none'; });
+  setTimeout(() => {
+    const v = document.querySelector('video');
+    if (!v || v.readyState < 2 || !v.videoWidth) {
+      error('La cámara no se inició.<br><br>Cierra otras apps que usen la cámara y vuelve a intentar.' +
+            '<br>Si sigue en negro, prueba abriendo el visor en el navegador (Chrome).');
+    }
+  }, 10000);
   window.addEventListener('camera-error', () =>
     error('No se pudo usar la cámara.<br><br>Revisa que la app o el navegador tengan permiso de cámara.'));
 
