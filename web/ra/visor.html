@@ -69,11 +69,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>
     </button>
-    <button id="btn-compartir" aria-label="Capturar y compartir">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-        <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
-    </button>
+    <span style="width:52px" aria-hidden="true"></span>
   </div>
   <div id="flash"></div>
   <div id="info"><button class="cerrar" aria-label="Cerrar">✕</button><div id="info-contenido"></div></div>
@@ -280,24 +276,6 @@
   $('btn-foto').onclick = async () => {
     try { descargar(await capturar()); avisar('Captura guardada en Descargas'); }
     catch (e) { avisar('No se pudo tomar la captura'); }
-  };
-  $('btn-compartir').onclick = async () => {
-    let archivo;
-    try { archivo = await capturar(); } catch (e) { return avisar('No se pudo tomar la captura'); }
-    const datos = {
-      files: [archivo], title: tema.titulo,
-      text: tema.titulo + ' en Realidad Aumentada con Illari OpenLab Académico 🔬 https://paqariol.github.io/es/resources/apps/',
-    };
-    if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
-      try { await navigator.share(datos); } catch (e) { /* el usuario canceló */ }
-      return;
-    }
-    // Este navegador no comparte imágenes (ej. Firefox): se guarda la captura
-    descargar(archivo);
-    avisar('Captura guardada en Descargas. Adjúntala desde tu galería al compartir');
-    if (navigator.share) {
-      setTimeout(() => navigator.share({ title: datos.title, text: datos.text }).catch(() => {}), 1200);
-    }
   };
 
   const items = [...document.querySelectorAll('a-asset-item')];
