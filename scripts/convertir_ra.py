@@ -263,6 +263,9 @@ def leer_info(valor: str, avisos: list[str], tema: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------- Temas
+# Interacciones con las manos disponibles en web/ra/manos.html (columna opcional "Interacción" de la hoja Temas)
+INTERACCIONES = {"agua"}
+
 PATRON_COMB = re.compile(r"^\s*([A-Za-z0-9]+(?:\s*\+\s*[A-Za-z0-9]+)+)\s*=\s*(.+?)\s*$")
 
 
@@ -365,6 +368,14 @@ def generar(salida: Path, avisos: list[str]) -> dict | None:
                 avisos.append(f"Temas, fila {r}: '{nombre}' no es un número; se usa {defecto}.")
                 return defecto
 
+        interaccion = _clave(celda(r, "interaccion"))
+        if interaccion and interaccion not in INTERACCIONES:
+            avisos.append(
+                f"Temas, fila {r}: la interacción '{interaccion}' no existe "
+                f"(disponibles: {', '.join(sorted(INTERACCIONES))}) — se omite."
+            )
+            interaccion = ""
+
         nobel = celda(r, "nobel-ano")
         ids.add(tid)
         temas.append({
@@ -379,6 +390,7 @@ def generar(salida: Path, avisos: list[str]) -> dict | None:
             "distancia": numero("distancia", 2.5),
             "escala": numero("escala", 1.0),
             "girar": _clave(celda(r, "girar") or "si") not in ("no", "0", "false"),
+            "interaccion": interaccion or None,
         })
 
     # Marcadores: imágenes y PDF
