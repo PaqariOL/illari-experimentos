@@ -31,6 +31,7 @@ EXCEL_RA = RAIZ / "ra.xlsx"
 CARPETA_RA = RAIZ / "ra"
 WEB_RA = RAIZ / "web" / "ra"
 CACHE = RAIZ / ".cache-modelos"
+CARPETA_MOLECULAS = CARPETA_RA / "moleculas"  # archivos .sdf / .mol para "Con tus manos"
 
 # Si un modelo no está en ra/modelos/, se busca aquí (en este orden)
 FUENTES_MODELOS = [
@@ -263,9 +264,6 @@ def leer_info(valor: str, avisos: list[str], tema: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------- Temas
-# Interacciones con las manos disponibles en web/ra/manos.html (columna opcional "Interacción" de la hoja Temas)
-INTERACCIONES = {"agua"}
-
 PATRON_COMB = re.compile(r"^\s*([A-Za-z0-9]+(?:\s*\+\s*[A-Za-z0-9]+)+)\s*=\s*(.+?)\s*$")
 
 
@@ -277,6 +275,83 @@ def separar_nombre(celda: str) -> tuple[str, str]:
         archivo = celda.strip()
         nombre = Path(archivo).stem
     return nombre, archivo
+
+
+# ---------------------------------------------------------------- Moléculas ("Con tus manos")
+def validar_sdf(texto: str) -> str | None:
+    """Revisa que el archivo sea un .sdf/.mol V2000 legible. Devuelve el problema, o None si está bien."""
+    l = texto.replace("\r", "").split("\n")
+    if len(l) < 4:
+        return "el archivo está vacío o incompleto"
+    if "V3000" in l[3]:
+        return "está en formato V3000; descárgalo de nuevo como SDF (V2000)"
+    try:
+        na, nb = int(l[3][0:3]), int(l[3][3:6])
+    except ValueError:
+        return "no parece un archivo .sdf / .mol"
+    if na < 1 or len(l) < 4 + na + nb:
+        return "no tiene átomos o está incompleto"
+    for i in range(nb):
+        s = l[4 + na + i]
+        try:
+            a, b = int(s[0:3]), int(s[3:6])
+        except ValueError:
+            return f"el enlace {i + 1} no se puede leer"
+        if not (1 <= a <= na and 1 <= b <= na):
+            return f"el enlace {i + 1} apunta a un átomo que no existe"
+    return None
+
+
+def leer_moleculas(wb, destino: Path, avisos: list[str]) -> list[dict]:
+    """Hoja "Moléculas": Nombre | Archivo (.sdf) | Descripción | Grupo. Fila 2 = ejemplo."""
+    hoja = next((wb[n] for n in wb.sheetnames if _clave(n) == "moleculas"), None)
+    if hoja is None:
+        return []
+    enc = {_clave(_texto(hoja.cell(1, c).value)): c for c in range(1, hoja.max_column + 1) if hoja.cell(1, c).value}
+    col = lambda *nombres: next((enc[n] for n in nombres if n in enc), None)
+    c_nom, c_arch = col("nombre", "molecula"), col("archivo-sdf", "archivo", "archivo-sdf-o-mol")
+    c_desc, c_grupo = col("descripcion"), col("grupo")
+    if not c_nom or not c_arch:
+        avisos.append('Moléculas: faltan las columnas "Nombre" y "Archivo (.sdf)".')
+        return []
+    disponibles = {f.name.lower(): f for f in CARPETA_MOLECULAS.glob("*")} if CARPETA_MOLECULAS.is_dir() else {}
+    carpeta = destino / "moleculas"
+    lista, ids = [], set()
+    for r in range(3, hoja.max_row + 1):
+        nombre = _texto(hoja.cell(r, c_nom).value)
+        archivo = Path(_texto(hoja.cell(r, c_arch).value)).name
+        if not nombre and not archivo:
+            continue
+        if not nombre or not archivo:
+            avisos.append(f"Moléculas, fila {r}: falta el nombre o el archivo — se omite.")
+            continue
+        if not archivo.lower().endswith((".sdf", ".mol")):
+            avisos.append(f"Moléculas, fila {r}: '{archivo}' debe ser un archivo .sdf o .mol — se omite.")
+            continue
+        fuente = disponibles.get(archivo.lower())
+        if fuente is None:
+            avisos.append(f"Moléculas, fila {r}: no se encontró '{archivo}' en ra/moleculas/ — se omite.")
+            continue
+        problema = validar_sdf(fuente.read_text(encoding="utf-8", errors="replace"))
+        if problema:
+            avisos.append(f"Moléculas, fila {r}: '{archivo}' {problema} — se omite.")
+            continue
+        mid = _clave(Path(archivo).stem)
+        if mid in ids:
+            avisos.append(f"Moléculas, fila {r}: el archivo '{archivo}' ya se usa en otra fila — se omite.")
+            continue
+        ids.add(mid)
+        carpeta.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(fuente, carpeta / fuente.name)
+        lista.append({
+            "id": mid,
+            "nombre": nombre,
+            "archivo": f"moleculas/{fuente.name}",
+            "descripcion": _texto(hoja.cell(r, c_desc).value) if c_desc else "",
+            "grupo": (_texto(hoja.cell(r, c_grupo).value) if c_grupo else "") or "Moléculas",
+        })
+    print(f"✔ {len(lista)} moléculas para «Con tus manos»")
+    return lista
 
 
 def generar(salida: Path, avisos: list[str]) -> dict | None:
@@ -368,14 +443,6 @@ def generar(salida: Path, avisos: list[str]) -> dict | None:
                 avisos.append(f"Temas, fila {r}: '{nombre}' no es un número; se usa {defecto}.")
                 return defecto
 
-        interaccion = _clave(celda(r, "interaccion"))
-        if interaccion and interaccion not in INTERACCIONES:
-            avisos.append(
-                f"Temas, fila {r}: la interacción '{interaccion}' no existe "
-                f"(disponibles: {', '.join(sorted(INTERACCIONES))}) — se omite."
-            )
-            interaccion = ""
-
         nobel = celda(r, "nobel-ano")
         ids.add(tid)
         temas.append({
@@ -390,7 +457,6 @@ def generar(salida: Path, avisos: list[str]) -> dict | None:
             "distancia": numero("distancia", 2.5),
             "escala": numero("escala", 1.0),
             "girar": _clave(celda(r, "girar") or "si") not in ("no", "0", "false"),
-            "interaccion": interaccion or None,
         })
 
     # Marcadores: imágenes y PDF
@@ -421,12 +487,15 @@ def generar(salida: Path, avisos: list[str]) -> dict | None:
         pdf = pdf_marcadores(lista_m, carpeta_m)
         guia = "ra/marcadores/guia_marcadores.pdf" if pdf else ""
 
+    moleculas = leer_moleculas(wb, destino, avisos)
+
     ra = {
         "tipoCodigo": TIPO_CODIGO,
         "guia": guia or None,
         "marcadores": lista_m,
         "categorias": categorias,
         "temas": temas,
+        "moleculas": moleculas,
     }
     (destino / "temas.json").write_text(json.dumps(ra, ensure_ascii=False), encoding="utf-8")
     total_kb = sum(v["kb"] for v in pub.hechos.values() if v)
