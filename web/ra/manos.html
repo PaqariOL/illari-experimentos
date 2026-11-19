@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Con tus manos · Illari OpenLab</title>
+<style>
+  :root {
+    --fondo: #B8E3E9;
+    --azul: #1B2F6E;
+    --boton: #95B3B8;
+    --panel: rgba(255, 255, 255, 0.86);
+    --texto: #111;
+    --h1: #1E88E5;
+    --h2: #2E9D4A;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1b24; color: var(--texto);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; touch-action: none; user-select: none; }
+  #video, #escena, #manos { position: fixed; inset: 0; width: 100%; height: 100%; }
+  #video { object-fit: cover; background: linear-gradient(160deg, #20414f, #0d1b24); }
+  #video.espejo { transform: scaleX(-1); }
+  #escena { z-index: 1; }
+  #manos { z-index: 2; pointer-events: none; }
+  #etiquetas { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+  .etiqueta { position: absolute; transform: translate(-50%, -50%); font-weight: 800; font-size: 14px;
+    color: #111; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+  .etiqueta.o { color: #fff; text-shadow: 0 0 3px #7a0d0d; }
+
+  /* Barra superior */
+  #barra { position: fixed; z-index: 5; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 8px;
+    padding: calc(env(safe-area-inset-top) + 8px) 10px 8px; background: linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,0)); }
+  #logo { height: 30px; }
+  #titulo { flex: 1; color: #fff; font-weight: 800; font-size: 17px; text-shadow: 0 1px 3px rgba(0,0,0,.6);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .icono { width: 42px; height: 42px; border: 0; border-radius: 21px; background: rgba(255,255,255,.88); color: var(--azul);
+    display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,.3); }
+  .icono:active { opacity: .7; }
+  .icono svg { width: 22px; height: 22px; }
+
+  /* Estado de la detección */
+  #estado { position: fixed; z-index: 5; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top) + 62px);
+    padding: 6px 12px; border-radius: 14px; background: rgba(0,0,0,.55); color: #fff; font-size: 13px; font-weight: 600;
+    white-space: nowrap; }
+
+  /* Aviso temporal */
+  #aviso { position: fixed; z-index: 6; left: 50%; top: calc(env(safe-area-inset-top) + 130px); transform: translate(-50%, 0) scale(.9); opacity: 0;
+    max-width: 86%; padding: 12px 16px; border-radius: 14px; background: rgba(27,47,110,.94); color: #fff;
+    font-size: 15px; font-weight: 700; text-align: center; transition: opacity .25s, transform .25s; pointer-events: none; }
+  #aviso.ver { opacity: 1; transform: translate(-50%, 0) scale(1); }
+
+  /* Panel de datos */
+  #panel { position: fixed; z-index: 5; left: 8px; right: 8px; bottom: calc(env(safe-area-inset-bottom) + 8px);
+    display: flex; gap: 10px; align-items: stretch; padding: 10px; border-radius: 16px; background: var(--panel);
+    box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+  #datos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+  .dato { display: flex; align-items: center; gap: 6px; }
+  .punto { width: 10px; height: 10px; border-radius: 5px; flex: none; }
+  .dato b { font-weight: 800; }
+  .valor { font-variant-numeric: tabular-nums; }
+  .roto { color: #B22318; font-weight: 800; }
+  #nota { font-size: 11px; color: #444; line-height: 1.3; }
+  #grafica { width: 150px; height: 118px; flex: none; }
+
+  /* Pantalla de inicio / ayuda */
+  #intro { position: fixed; z-index: 10; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 20px; background: rgba(13,27,36,.72); }
+  #intro.oculto { display: none; }
+  .tarjeta { width: 100%; max-width: 420px; max-height: 100%; overflow: auto; padding: 18px; border-radius: 18px;
+    background: var(--fondo); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+  .tarjeta h1 { margin: 0 0 4px; font-size: 20px; color: var(--azul); }
+  .tarjeta h2 { margin: 0 0 12px; font-size: 15px; color: #222; font-weight: 600; }
+  .tarjeta ol { margin: 0 0 12px; padding-left: 20px; font-size: 14px; line-height: 1.45; }
+  .tarjeta li { margin-bottom: 6px; }
+  .tarjeta .consejo { font-size: 12px; color: #333; margin: 0 0 14px; }
+  .principal { width: 100%; height: 50px; border: 0; background: var(--azul); color: #fff; font-size: 16px; font-weight: 800;
+    border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,.25); }
+  .principal:active { opacity: .7; }
+  .principal:disabled { opacity: .6; }
+</style>
+</head>
+<body>
+<video id="video" playsinline muted autoplay></video>
+<canvas id="escena"></canvas>
+<canvas id="manos"></canvas>
+<div id="etiquetas"></div>
+
+<div id="barra">
+  <img id="logo" src="logo_illari_ar.png" alt="Illari OpenLab" onerror="this.remove()" />
+  <div id="titulo">Con tus manos</div>
+  <button class="icono" id="btnCamara" aria-label="Cambiar cámara" title="Cambiar cámara">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3l-2-3H9L7 7H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"/><path d="M9 13a3 3 0 0 1 5-2.2M15 13a3 3 0 0 1-5 2.2"/><path d="M14 9.5v1.5h-1.5M10 16.5V15h1.5"/></svg>
+  </button>
+  <button class="icono" id="btnReiniciar" aria-label="Reiniciar" title="Reiniciar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+  </button>
+  <button class="icono" id="btnAyuda" aria-label="Ayuda" title="Ayuda">?</button>
+</div>
+<div id="estado">Preparando…</div>
+<div id="aviso"></div>
+
+<div id="panel">
+  <div id="datos"></div>
+  <canvas id="grafica" aria-label="Curva de energía del enlace"></canvas>
+</div>
+
+<div id="intro">
+  <div class="tarjeta">
+    <h1 id="introTitulo">Con tus manos</h1>
+    <h2 id="introSub">Agarra, estira y rompe los enlaces de la molécula.</h2>
+    <ol id="introPasos"></ol>
+    <p class="consejo">Consejo: con la cámara trasera, sostén el celular con una mano y usa la otra. Con la frontal, apoya el celular y usa las dos manos. Busca buena luz.</p>
+    <button class="principal" id="btnEmpezar">Empezar</button>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ============================================================ Configuración
+const MEDIAPIPE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35';
+const params = new URLSearchParams(location.search);
+const MODELO_MANOS = params.get('modelo') ||
+  'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+
+// Moléculas disponibles. Distancias en Å, energías en kJ/mol, ángulos en grados.
+// Morse: V(r) = De · (1 − e^(−a·(r − re)))²
+const MOLECULAS = {
+  agua: {
+    nombre: 'Agua (H₂O)',
+    pasos: [
+      'Haz <b>pinza</b> (junta pulgar e índice) sobre un átomo para agarrarlo; abre los dedos para soltarlo.',
+      'Jala un <b>H</b> para estirar su enlace. Si lo jalas mucho, el enlace <b>se rompe</b>.',
+      'Mueve un H hacia los lados para cambiar el <b>ángulo</b> H–O–H.',
+      'Agarra el <b>O</b> para mover toda la molécula.',
+      'Acerca un H suelto al O para <b>formar</b> de nuevo el enlace.',
+      'También puedes usar el dedo sobre la pantalla.',
+    ],
+    atomos: [
+      { el: 'O', etiqueta: 'O', masa: 16, radio: 0.42, color: 0xE53935 },
+      { el: 'H', etiqueta: 'H₁', masa: 1, radio: 0.27, color: 0xF5F5F5, colorDato: 'var(--h1)', colorGrafica: '#1E88E5' },
+      { el: 'H', etiqueta: 'H₂', masa: 1, radio: 0.27, color: 0xF5F5F5, colorDato: 'var(--h2)', colorGrafica: '#2E9D4A' },
+    ],
+    enlaces: [
+      { a: 0, b: 1, nombre: 'O–H₁', re: 0.958, De: 463, alfa: 2.2 },
+      { a: 0, b: 2, nombre: 'O–H₂', re: 0.958, De: 463, alfa: 2.2 },
+    ],
+    angulo: { centro: 0, a: 1, b: 2, grados: 104.5 },
+    nota: 'Romper un enlace O–H absorbe ≈ 463 kJ/mol; formarlo libera esa energía.',
+  },
+};
+
+const RUPTURA = 2.4;   // Å: el enlace se rompe al pasar esta distancia
+const UNION = 1.25;    // Å: un H suelto se vuelve a unir al acercarlo a esta distancia
+const ANCHO_VISTA = 5.2; // Å visibles en el lado corto de la pantalla
+
+const clave = (params.get('mol') || 'agua').toLowerCase();
+const MOL = MOLECULAS[clave];
+
+// ============================================================ Utilidades
+const $ = (id) => document.getElementById(id);
+const num = (x, d = 2) => x.toFixed(d).replace('.', ',');
+let temporizadorAviso = 0;
+function avisar(texto, ms = 2600) {
+  const el = $('aviso');
+  el.innerHTML = texto;
+  el.classList.add('ver');
+  clearTimeout(temporizadorAviso);
+  temporizadorAviso = setTimeout(() => el.classList.remove('ver'), ms);
+}
+const estado = (t) => { $('estado').textContent = t; };
+
+if (!MOL) {
+  $('introTitulo').textContent = 'Molécula no disponible';
+  $('introSub').textContent = `No hay una interacción llamada "${clave}".`;
+  $('btnEmpezar').remove();
+  throw new Error('molécula desconocida');
+}
+$('titulo').textContent = MOL.nombre;
+$('introTitulo').textContent = `Con tus manos: ${MOL.nombre}`;
+$('introPasos').innerHTML = MOL.pasos.map((p) => `<li>${p}</li>`).join('');
+
+// ============================================================ Escena 3D (cámara ortográfica: 1 unidad = 1 Å)
+const lienzo = $('escena');
+const render = new THREE.WebGLRenderer({ canvas: lienzo, alpha: true, antialias: true });
+render.setPixelRatio(Math.min(devicePixelRatio, 2));
+const escena = new THREE.Scene();
+const camara = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+camara.position.set(0, 0, 20);
+escena.add(new THREE.AmbientLight(0xffffff, 0.75));
+const luz = new THREE.DirectionalLight(0xffffff, 1.6);
+luz.position.set(-3, 5, 8);
+escena.add(luz);
+
+let W = 0, H = 0, pxPorA = 100, mitadW = 1, mitadH = 1;
+function medir() {
+  W = innerWidth; H = innerHeight;
+  render.setSize(W, H, false);
+  pxPorA = Math.min(W, H) / ANCHO_VISTA;
+  mitadW = W / 2 / pxPorA; mitadH = H / 2 / pxPorA;
+  Object.assign(camara, { left: -mitadW, right: mitadW, top: mitadH, bottom: -mitadH });
+  camara.updateProjectionMatrix();
+  const c = $('manos'); c.width = W * devicePixelRatio; c.height = H * devicePixelRatio;
+  const g = $('grafica'); g.width = g.clientWidth * devicePixelRatio; g.height = g.clientHeight * devicePixelRatio;
+}
+// Pantalla (px) ↔ mundo (Å)
+const aMundo = (x, y) => ({ x: (x - W / 2) / pxPorA, y: -(y - H / 2) / pxPorA });
+const aPantalla = (p) => ({ x: W / 2 + p.x * pxPorA, y: H / 2 - p.y * pxPorA });
+// Zona libre (entre la barra superior y el panel de datos), en Å: los átomos no salen de ella
+let zona = { xMin: -1, xMax: 1, yMin: -1, yMax: 1 };
+function calcularZona() {
+  const arriba = aMundo(0, $('barra').getBoundingClientRect().bottom).y;
+  const abajo = aMundo(0, $('panel').getBoundingClientRect().top).y;
+  zona = { xMin: -mitadW, xMax: mitadW, yMin: abajo, yMax: arriba };
+}
+const limitar = (a, p) => ({
+  x: Math.max(zona.xMin + a.radio, Math.min(zona.xMax - a.radio, p.x)),
+  y: Math.max(zona.yMin + a.radio, Math.min(zona.yMax - a.radio, p.y)),
+});
+// Centro del espacio libre entre la barra superior y el panel de datos
+function centroLibre() {
+  const arriba = $('barra').getBoundingClientRect().bottom + 30;
+  const abajo = $('panel').getBoundingClientRect().top;
+  return aMundo(W / 2, (arriba + abajo) / 2);
+}
+
+// ============================================================ Molécula: estado y física
+const atomos = MOL.atomos.map((d) => ({ ...d, p: { x: 0, y: 0 }, v: { x: 0, y: 0 }, agarrado: null }));
+const enlaces = MOL.enlaces.map((d) => ({ ...d, roto: false }));
+const morse = (e, r) => e.De * (1 - Math.exp(-e.alfa * (r - e.re))) ** 2;
+const dist = (i, j) => Math.hypot(atomos[j].p.x - atomos[i].p.x, atomos[j].p.y - atomos[i].p.y);
+let centro = { x: 0, y: 0 };
+
+function reiniciar() {
+  centro = centroLibre();
+  const th = (MOL.angulo.grados * Math.PI) / 180 / 2;
+  const re = enlaces[0].re;
+  atomos[0].p = { ...centro };
+  atomos[1].p = { x: centro.x - re * Math.sin(th), y: centro.y - re * Math.cos(th) };
+  atomos[2].p = { x: centro.x + re * Math.sin(th), y: centro.y - re * Math.cos(th) };
+  atomos.forEach((a) => { a.v = { x: 0, y: 0 }; a.agarrado = null; });
+  enlaces.forEach((e) => (e.roto = false));
+  agarres.clear();
+}
+
+const K_ENLACE = 25, K_ANGULO = 8, AMORTIGUAR = 5;
+function paso(dt) {
+  const f = atomos.map(() => ({ x: 0, y: 0 }));
+  // Enlaces (fuerza de Morse normalizada: es fuerte cerca del equilibrio y se debilita al estirar)
+  for (const e of enlaces) {
+    if (e.roto) continue;
+    const A = atomos[e.a].p, B = atomos[e.b].p;
+    const dx = B.x - A.x, dy = B.y - A.y, r = Math.hypot(dx, dy) || 1e-6;
+    const ex = Math.exp(-e.alfa * (r - e.re));
+    const F = K_ENLACE * 2 * (1 - ex) * ex; // dV/dr ÷ (De·a): >0 atrae, <0 repele
+    const ux = dx / r, uy = dy / r;
+    f[e.a].x += F * ux; f[e.a].y += F * uy;
+    f[e.b].x -= F * ux; f[e.b].y -= F * uy;
+  }
+  // Ángulo H–O–H (solo si los dos enlaces existen)
+  const ang = MOL.angulo;
+  if (ang && enlaces.every((e) => !e.roto)) {
+    const O = atomos[ang.centro].p, A = atomos[ang.a].p, B = atomos[ang.b].p;
+    const a1 = Math.atan2(A.y - O.y, A.x - O.x), a2 = Math.atan2(B.y - O.y, B.x - O.x);
+    let d = a2 - a1; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+    const signo = Math.sign(d) || 1;
+    const err = Math.abs(d) - (ang.grados * Math.PI) / 180; // >0: muy abierto
+    const T = K_ANGULO * err;
+    // empuja cada H en dirección tangente para cerrar/abrir el ángulo
+    for (const [idx, base, s] of [[ang.a, a1, signo], [ang.b, a2, -signo]]) {
+      f[idx].x += T * s * -Math.sin(base); f[idx].y += T * s * Math.cos(base);
+    }
+  }
+  // Repulsión suave entre átomos que no están enlazados (para que no se encimen)
+  for (let i = 0; i < atomos.length; i++) for (let j = i + 1; j < atomos.length; j++) {
+    const enl = enlaces.find((e) => !e.roto && ((e.a === i && e.b === j) || (e.a === j && e.b === i)));
+    if (enl) continue;
+    const dx = atomos[j].p.x - atomos[i].p.x, dy = atomos[j].p.y - atomos[i].p.y, r = Math.hypot(dx, dy) || 1e-6;
+    const min = 1.1;
+    if (r < min) {
+      const F = 30 * (min - r);
+      f[i].x -= F * dx / r; f[i].y -= F * dy / r; f[j].x += F * dx / r; f[j].y += F * dy / r;
+    }
+  }
+  // Integración: el O queda fijo salvo que lo agarren (así jalar un H estira el enlace)
+  atomos.forEach((a, i) => {
+    if (a.agarrado || i === MOL.angulo.centro) { a.v.x = a.v.y = 0; return; }
+    a.v.x = (a.v.x + (f[i].x / a.masa) * dt) * Math.exp(-AMORTIGUAR * dt);
+    a.v.y = (a.v.y + (f[i].y / a.masa) * dt) * Math.exp(-AMORTIGUAR * dt);
+    a.p.x += a.v.x * dt; a.p.y += a.v.y * dt;
+    // rebote en los bordes de la zona libre
+    const q = limitar(a, a.p);
+    if (q.x !== a.p.x) { a.p.x = q.x; a.v.x *= -0.4; }
+    if (q.y !== a.p.y) { a.p.y = q.y; a.v.y *= -0.4; }
+  });
+  // Ruptura y formación de enlaces
+  for (const e of enlaces) {
+    const r = dist(e.a, e.b);
+    if (!e.roto && r > RUPTURA) {
+      e.roto = true;
+      avisar(`¡Se rompió el enlace ${e.nombre}!<br><small>Romperlo absorbe ≈ ${e.De} kJ/mol</small>`);
+    } else if (e.roto && r < UNION) {
+      e.roto = false;
+      avisar(`¡Se formó el enlace ${e.nombre}!<br><small>Formarlo libera ≈ ${e.De} kJ/mol</small>`);
+    }
+  }
+}
+
+// ============================================================ Dibujo de la molécula
+const esferas = atomos.map((a) => {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(a.radio, 40, 28),
+    new THREE.MeshStandardMaterial({ color: a.color, roughness: 0.35, metalness: 0.05 }));
+  escena.add(m);
+  return m;
+});
+const barras = enlaces.map(() => {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 20),
+    new THREE.MeshStandardMaterial({ color: 0x9e9e9e, roughness: 0.5 }));
+  escena.add(m);
+  return m;
+});
+const etiquetas = atomos.map((a) => {
+  const d = document.createElement('div');
+  d.className = 'etiqueta' + (a.el === 'O' ? ' o' : '');
+  d.textContent = a.etiqueta;
+  $('etiquetas').appendChild(d);
+  return d;
+});
+const gris = new THREE.Color(0x9e9e9e), amarillo = new THREE.Color(0xF5B400), rojo = new THREE.Color(0xD32F2F);
+
+function dibujarMolecula() {
+  atomos.forEach((a, i) => {
+    esferas[i].position.set(a.p.x, a.p.y, 0);
+    esferas[i].scale.setScalar(a.agarrado ? 1.12 : 1);
+    const s = aPantalla(a.p);
+    etiquetas[i].style.left = s.x + 'px'; etiquetas[i].style.top = s.y + 'px';
+  });
+  enlaces.forEach((e, i) => {
+    const m = barras[i];
+    m.visible = !e.roto;
+    if (e.roto) return;
+    const A = atomos[e.a].p, B = atomos[e.b].p;
+    const dx = B.x - A.x, dy = B.y - A.y, r = Math.hypot(dx, dy);
+    const frac = Math.min(1, morse(e, r) / e.De);
+    m.position.set((A.x + B.x) / 2, (A.y + B.y) / 2, -0.05);
+    m.rotation.set(0, 0, Math.atan2(dy, dx) - Math.PI / 2);
+    const grosor = 0.1 * (1 - 0.55 * frac); // se adelgaza al estirarse
+    m.scale.set(grosor, r, grosor);
+    m.material.color.copy(frac < 0.5 ? gris.clone().lerp(amarillo, frac * 2) : amarillo.clone().lerp(rojo, (frac - 0.5) * 2));
+  });
+  render.render(escena, camara);
+}
+
+// ============================================================ Panel de datos y curva de energía
+function actualizarPanel() {
+  const filas = enlaces.map((e) => {
+    const h = atomos[e.b];
+    const r = dist(e.a, e.b);
+    const v = e.roto ? null : morse(e, r);
+    return `<div class="dato"><span class="punto" style="background:${h.colorDato}"></span><b>${e.nombre}</b>
+      <span class="valor">${e.roto ? '<span class="roto">roto</span>' : `${num(r)} Å · ${Math.round(v)} kJ/mol`}</span></div>`;
+  });
+  const ang = MOL.angulo;
+  let textoAng = '—';
+  if (ang && enlaces.every((e) => !e.roto)) {
+    const O = atomos[ang.centro].p, A = atomos[ang.a].p, B = atomos[ang.b].p;
+    const c = ((A.x - O.x) * (B.x - O.x) + (A.y - O.y) * (B.y - O.y)) / (Math.hypot(A.x - O.x, A.y - O.y) * Math.hypot(B.x - O.x, B.y - O.y));
+    textoAng = num((Math.acos(Math.max(-1, Math.min(1, c))) * 180) / Math.PI, 1) + '°';
+  }
+  filas.push(`<div class="dato"><span class="punto" style="background:#999"></span><b>Ángulo H–O–H</b> <span class="valor">${textoAng}</span></div>`);
+  filas.push(`<div id="nota">Normal: ${num(enlaces[0].re)} Å y ${num(MOL.angulo.grados, 1)}°. ${MOL.nota}</div>`);
+  $('datos').innerHTML = filas.join('');
+  dibujarGrafica();
+}
+
+function dibujarGrafica() {
+  const g = $('grafica'), c = g.getContext('2d'), k = devicePixelRatio;
+  const w = g.width / k, h = g.height / k;
+  c.setTransform(k, 0, 0, k, 0, 0);
+  c.clearRect(0, 0, w, h);
+  const e0 = enlaces[0];
+  const rMin = 0.6, rMax = 2.8, vMax = e0.De * 1.25;
+  const m = { l: 26, r: 6, t: 14, b: 26 };
+  const X = (r) => m.l + ((r - rMin) / (rMax - rMin)) * (w - m.l - m.r);
+  const Y = (v) => h - m.b - (Math.min(v, vMax) / vMax) * (h - m.t - m.b);
+  // ejes
+  c.strokeStyle = '#555'; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(m.l, m.t - 4); c.lineTo(m.l, h - m.b); c.lineTo(w - m.r, h - m.b); c.stroke();
+  // línea de energía de enlace
+  c.setLineDash([3, 3]); c.strokeStyle = '#B22318';
+  c.beginPath(); c.moveTo(m.l, Y(e0.De)); c.lineTo(w - m.r, Y(e0.De)); c.stroke(); c.setLineDash([]);
+  c.fillStyle = '#B22318'; c.font = '700 9px system-ui'; c.textAlign = 'right';
+  c.fillText(`${e0.De} kJ/mol`, w - m.r, Y(e0.De) - 3);
+  // curva de Morse
+  c.strokeStyle = '#1B2F6E'; c.lineWidth = 2; c.beginPath();
+  for (let i = 0; i <= 80; i++) {
+    const r = rMin + (i / 80) * (rMax - rMin);
+    i ? c.lineTo(X(r), Y(morse(e0, r))) : c.moveTo(X(r), Y(morse(e0, r)));
+  }
+  c.stroke();
+  // ruptura
+  c.strokeStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.moveTo(X(RUPTURA), m.t); c.lineTo(X(RUPTURA), h - m.b); c.stroke();
+  // puntos de cada enlace
+  enlaces.forEach((e) => {
+    if (e.roto) return;
+    const r = Math.min(dist(e.a, e.b), rMax);
+    c.fillStyle = atomos[e.b].colorGrafica;
+    c.beginPath(); c.arc(X(r), Y(morse(e, r)), 5, 0, 2 * Math.PI); c.fill();
+    c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
+  });
+  // rótulos
+  c.fillStyle = '#333'; c.font = '600 9px system-ui'; c.textAlign = 'center';
+  c.fillText('distancia O–H (Å)', (m.l + w - m.r) / 2, h - 3);
+  c.save(); c.translate(9, (m.t + h - m.b) / 2); c.rotate(-Math.PI / 2); c.fillText('energía', 0, 0); c.restore();
+  c.textAlign = 'center'; c.fillStyle = '#555';
+  for (const r of [1, 2]) c.fillText(String(r), X(r), h - m.b + 10);
+}
+
+// ============================================================ Agarrar átomos (manos y dedos)
+// Cada "agarre" (una mano en pinza o un dedo) sujeta un átomo y lo lleva a un punto de la pantalla.
+const agarres = new Map(); // id → { atomo, x, y }
+function atomoCercano(x, y) {
+  let mejor = -1, dMejor = Infinity;
+  atomos.forEach((a, i) => {
+    if (a.agarrado) return;
+    const s = aPantalla(a.p);
+    const d = Math.hypot(s.x - x, s.y - y);
+    const alcance = Math.max(48, a.radio * pxPorA * 1.9);
+    if (d < alcance && d < dMejor) { mejor = i; dMejor = d; }
+  });
+  return mejor;
+}
+function agarrar(id, x, y) {
+  const i = atomoCercano(x, y);
+  if (i < 0) return false;
+  agarres.set(id, { atomo: i, x, y });
+  atomos[i].agarrado = id;
+  return true;
+}
+function mover(id, x, y) {
+  const g = agarres.get(id);
+  if (!g) return;
+  g.x = x; g.y = y;
+}
+function soltar(id) {
+  const g = agarres.get(id);
+  if (!g) return;
+  atomos[g.atomo].agarrado = null;
+  agarres.delete(id);
+}
+function aplicarAgarres() {
+  for (const g of agarres.values()) {
+    const a = atomos[g.atomo];
+    const { x: nx, y: ny } = limitar(a, aMundo(g.x, g.y));
+    // si se mueve el O, los H enlazados lo acompañan (se mueve toda la molécula)
+    if (g.atomo === MOL.angulo.centro) {
+      const dx = nx - a.p.x, dy = ny - a.p.y;
+      for (const e of enlaces) if (!e.roto && e.a === g.atomo && !atomos[e.b].agarrado) {
+        atomos[e.b].p.x += dx; atomos[e.b].p.y += dy;
+      }
+    }
+    a.p.x = nx; a.p.y = ny;
+  }
+}
+
+// Dedos sobre la pantalla
+lienzo.addEventListener('pointerdown', (ev) => { if (agarrar('toque' + ev.pointerId, ev.clientX, ev.clientY)) lienzo.setPointerCapture(ev.pointerId); });
+lienzo.addEventListener('pointermove', (ev) => mover('toque' + ev.pointerId, ev.clientX, ev.clientY));
+for (const t of ['pointerup', 'pointercancel']) lienzo.addEventListener(t, (ev) => soltar('toque' + ev.pointerId));
+
+// ============================================================ Cámara
+const video = $('video');
+let modoCamara = 'environment', flujo = null;
+async function encenderCamara() {
+  if (flujo) flujo.getTracks().forEach((t) => t.stop());
+  try {
+    flujo = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: modoCamara, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false,
+    });
+    video.srcObject = flujo;
+    await video.play();
+    video.classList.toggle('espejo', modoCamara === 'user');
+    return true;
+  } catch (e) {
+    console.warn(e);
+    estado('Sin cámara: usa el dedo sobre la pantalla');
+    return false;
+  }
+}
+$('btnCamara').onclick = async () => {
+  modoCamara = modoCamara === 'environment' ? 'user' : 'environment';
+  manosPrevias = [];
+  for (const id of [...agarres.keys()]) if (id.startsWith('mano')) soltar(id);
+  await encenderCamara();
+};
+$('btnReiniciar').onclick = () => { reiniciar(); avisar('Molécula reiniciada', 1200); };
+$('btnAyuda').onclick = () => { $('btnEmpezar').textContent = 'Continuar'; $('intro').classList.remove('oculto'); };
+
+// ============================================================ Detección de manos (MediaPipe)
+let detector = null, ultimoTiempoVideo = -1;
+async function cargarDetector() {
+  estado('Cargando el detector de manos…');
+  try {
+    const { FilesetResolver, HandLandmarker } = await import(`${MEDIAPIPE}/vision_bundle.mjs`);
+    const archivos = await FilesetResolver.forVisionTasks(`${MEDIAPIPE}/wasm`);
+    const opciones = (delegate) => ({
+      baseOptions: { modelAssetPath: MODELO_MANOS, delegate },
+      runningMode: 'VIDEO', numHands: 2,
+      minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5,
+    });
+    try {
+      detector = await HandLandmarker.createFromOptions(archivos, opciones('GPU'));
+    } catch {
+      detector = await HandLandmarker.createFromOptions(archivos, opciones('CPU'));
+    }
+    estado('Muestra tu mano a la cámara');
+  } catch (e) {
+    console.warn(e);
+    detector = null;
+    estado('Detector de manos no disponible: usa el dedo');
+  }
+}
+
+// Convierte un punto de la mano (0–1 en el video) a píxeles de la pantalla (video en modo "cover")
+function puntoPantalla(l) {
+  const vw = video.videoWidth || W, vh = video.videoHeight || H;
+  const esc = Math.max(W / vw, H / vh);
+  const dx = (W - vw * esc) / 2, dy = (H - vh * esc) / 2;
+  let x = l.x * vw * esc + dx;
+  const y = l.y * vh * esc + dy;
+  if (modoCamara === 'user') x = W - x;
+  return { x, y };
+}
+
+// Seguimiento de cada mano entre cuadros, con detección de pinza (con histéresis) y suavizado
+let manosPrevias = []; // [{ id, centro:{x,y}, pinza:boolean, punto:{x,y} }]
+let siguienteId = 0;
+const CONEXIONES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+
+function procesarManos(listas) {
+  const nuevas = listas.map((lms) => {
+    const P = lms.map(puntoPantalla);
+    const tam = Math.hypot(P[0].x - P[9].x, P[0].y - P[9].y) || 1;
+    const apertura = Math.hypot(P[4].x - P[8].x, P[4].y - P[8].y) / tam;
+    const punto = { x: (P[4].x + P[8].x) / 2, y: (P[4].y + P[8].y) / 2 };
+    return { P, apertura, punto, centro: P[9] };
+  });
+  // emparejar con las manos del cuadro anterior (por cercanía)
+  const usadas = new Set();
+  const actuales = nuevas.map((m) => {
+    let previa = null, dMin = Infinity;
+    for (const p of manosPrevias) {
+      if (usadas.has(p.id)) continue;
+      const d = Math.hypot(p.centro.x - m.centro.x, p.centro.y - m.centro.y);
+      if (d < dMin && d < 250) { dMin = d; previa = p; }
+    }
+    if (previa) usadas.add(previa.id);
+    const id = previa ? previa.id : 'mano' + siguienteId++;
+    const estabaEnPinza = previa ? previa.pinza : false;
+    const pinza = estabaEnPinza ? m.apertura < 0.5 : m.apertura < 0.32;
+    const suave = previa ? { x: previa.punto.x * 0.45 + m.punto.x * 0.55, y: previa.punto.y * 0.45 + m.punto.y * 0.55 } : m.punto;
+    return { id, P: m.P, centro: m.centro, pinza, punto: suave, nueva: pinza && !estabaEnPinza };
+  });
+  // manos que desaparecieron: soltar lo que tenían
+  for (const p of manosPrevias) if (!actuales.some((a) => a.id === p.id)) soltar(p.id);
+  for (const m of actuales) {
+    if (m.nueva) agarrar(m.id, m.punto.x, m.punto.y);
+    else if (m.pinza) mover(m.id, m.punto.x, m.punto.y);
+    else soltar(m.id);
+  }
+  manosPrevias = actuales;
+  dibujarManos(actuales);
+  if (detector || simulando) {
+    const n = actuales.length;
+    estado(n === 0 ? 'Muestra tu mano a la cámara' : `${n === 1 ? '1 mano' : '2 manos'} · ${actuales.some((a) => a.pinza) ? 'pinza ✓' : 'junta pulgar e índice para agarrar'}`);
+  }
+}
+
+function dibujarManos(manos) {
+  const c = $('manos').getContext('2d'), k = devicePixelRatio;
+  c.setTransform(k, 0, 0, k, 0, 0);
+  c.clearRect(0, 0, W, H);
+  for (const m of manos) {
+    c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 3;
+    c.beginPath();
+    for (const [a, b] of CONEXIONES) { c.moveTo(m.P[a].x, m.P[a].y); c.lineTo(m.P[b].x, m.P[b].y); }
+    c.stroke();
+    c.fillStyle = '#1B2F6E';
+    for (const p of m.P) { c.beginPath(); c.arc(p.x, p.y, 3.5, 0, 2 * Math.PI); c.fill(); }
+    // indicador de pinza
+    const agarre = agarres.get(m.id);
+    c.lineWidth = 3;
+    c.strokeStyle = m.pinza ? (agarre ? '#F5B400' : '#ffffff') : 'rgba(255,255,255,.6)';
+    c.fillStyle = m.pinza ? (agarre ? 'rgba(245,180,0,.35)' : 'rgba(255,255,255,.25)') : 'transparent';
+    c.beginPath(); c.arc(m.punto.x, m.punto.y, m.pinza ? 16 : 22, 0, 2 * Math.PI); c.fill(); c.stroke();
+  }
+}
+
+// Para pruebas: permite inyectar manos simuladas (listas de 21 puntos normalizados)
+let simulando = null;
+window.__lab = {
+  simularManos: (listas) => { simulando = listas; },
+  estado: () => ({
+    atomos: atomos.map((a) => ({ el: a.el, x: a.p.x, y: a.p.y, agarrado: a.agarrado })),
+    enlaces: enlaces.map((e) => ({ nombre: e.nombre, roto: e.roto, r: dist(e.a, e.b) })),
+    pantalla: atomos.map((a) => aPantalla(a.p)),
+  }),
+  // inverso de puntoPantalla: píxeles de la pantalla → coordenadas 0–1 del video
+  aNormalizado: (x, y) => {
+    const vw = video.videoWidth || W, vh = video.videoHeight || H;
+    const esc = Math.max(W / vw, H / vh);
+    const dx = (W - vw * esc) / 2, dy = (H - vh * esc) / 2;
+    if (modoCamara === 'user') x = W - x;
+    return { x: (x - dx) / (vw * esc), y: (y - dy) / (vh * esc) };
+  },
+};
+
+// ============================================================ Bucle principal
+let tAnterior = performance.now(), cuadro = 0;
+function bucle(t) {
+  const dt = Math.min(0.05, (t - tAnterior) / 1000);
+  tAnterior = t;
+  if (simulando) {
+    procesarManos(simulando);
+  } else if (detector && video.readyState >= 2 && video.currentTime !== ultimoTiempoVideo) {
+    ultimoTiempoVideo = video.currentTime;
+    try {
+      const r = detector.detectForVideo(video, t);
+      procesarManos(r.landmarks || []);
+    } catch (e) { console.warn(e); }
+  }
+  aplicarAgarres();
+  const sub = 4;
+  for (let i = 0; i < sub; i++) paso(dt / sub);
+  aplicarAgarres();
+  dibujarMolecula();
+  if (cuadro++ % 3 === 0) actualizarPanel();
+  requestAnimationFrame(bucle);
+}
+
+// ============================================================ Inicio
+medir();
+actualizarPanel();
+calcularZona();
+reiniciar();
+addEventListener('resize', () => { const antes = { ...centro }; medir(); calcularZona(); const ahora = centroLibre();
+  const dx = ahora.x - antes.x, dy = ahora.y - antes.y; atomos.forEach((a) => { a.p.x += dx; a.p.y += dy; }); centro = ahora; });
+requestAnimationFrame(bucle);
+estado('Toca «Empezar»');
+
+let iniciado = false;
+$('btnEmpezar').onclick = async () => {
+  $('intro').classList.add('oculto');
+  if (iniciado) return;
+  iniciado = true;
+  const hayCamara = await encenderCamara();
+  if (hayCamara) await cargarDetector();
+};
+</script>
+</body>
+</html>
