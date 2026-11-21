@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Con tus manos · Illari OpenLab</title>
+<script src="captura.js"></script>
 <style>
   :root { --fondo: #B8E3E9; --azul: #1B2F6E; --panel: rgba(255, 255, 255, 0.86); --texto: #111; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -49,6 +50,21 @@
   .roto { color: #B22318; font-weight: 800; }
   #grafica { width: 150px; height: 118px; flex: none; align-self: center; }
   #panel.oculto { display: none; }
+  #captura { position: fixed; z-index: 5; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 14px; }
+  #captura button { width: 52px; height: 52px; border-radius: 26px; border: 0; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+  #captura button:active { transform: scale(.92); }
+  #btnFoto { background: #fff; color: var(--azul); }
+  #btnFoto svg { width: 26px; height: 26px; }
+  #btnGrabar { background: rgba(255,255,255,.92); }
+  #btnGrabar i { display: block; width: 22px; height: 22px; border-radius: 11px; background: #D32F2F; transition: all .2s; }
+  #btnGrabar.grabando { background: #fff; }
+  #btnGrabar.grabando i { width: 18px; height: 18px; border-radius: 4px; }
+  #rec { position: fixed; z-index: 6; right: 72px; top: calc(50% + 33px); transform: translateY(-50%); display: none; white-space: nowrap;
+    padding: 5px 12px; border-radius: 14px; background: rgba(211,47,47,.92); color: #fff; font-size: 14px; font-weight: 800;
+    font-variant-numeric: tabular-nums; }
+  #rec.ver { display: block; }
+  #flash { position: fixed; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; transition: opacity .25s; }
   .icono.apagado { background: rgba(255,255,255,.5); color: #555; }
 
   #intro { position: fixed; z-index: 10; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -84,6 +100,14 @@
   <button class="icono" id="btnAyuda" aria-label="Ayuda" title="Ayuda">?</button>
 </div>
 <div id="estado"></div>
+<div id="captura">
+  <button id="btnFoto" aria-label="Tomar foto" title="Tomar foto">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>
+  </button>
+  <button id="btnGrabar" aria-label="Grabar video" title="Grabar video"><i></i></button>
+</div>
+<div id="rec"></div>
+<div id="flash"></div>
 <div id="aviso"></div>
 
 <div id="panel">
@@ -807,6 +831,94 @@ function dibujarManos(manos) {
     c.beginPath(); c.arc(m.punto.x, m.punto.y, m.pinza ? 16 : 22, 0, 2 * Math.PI); c.fill(); c.stroke();
   }
 }
+
+// ============================================================ Foto y video
+// Dibuja un cuadro igual a la pantalla: cámara, molécula, etiquetas, logo, nombre y el panel (si está visible).
+// No incluye los botones, los avisos ni los indicadores de la mano.
+function componer(g, W, H) {
+  const fondo = g.createLinearGradient(0, 0, W * 0.4, H);
+  fondo.addColorStop(0, '#20414f'); fondo.addColorStop(1, '#0d1b24');
+  g.fillStyle = fondo; g.fillRect(0, 0, W, H);
+  if (flujo && video.readyState >= 2) IllariCaptura.dibujarVideoCubriendo(g, video, W, H, modoCamara === 'user');
+  render.render(escena, camara);
+  g.drawImage(lienzo, 0, 0, W, H);
+  // símbolos de los átomos
+  g.font = '800 7px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+  etiquetas.forEach((e, i) => {
+    if (e.style.opacity === '0') return;
+    const x = parseFloat(e.style.left), y = parseFloat(e.style.top), clara = atomos[i]?.clara;
+    g.lineWidth = 2; g.strokeStyle = clara ? '#000' : '#fff'; g.fillStyle = clara ? '#fff' : '#111';
+    g.strokeText(e.textContent, x, y); g.fillText(e.textContent, x, y);
+  });
+  // barra superior: degradado, logo y nombre de la molécula
+  const rb = $('barra').getBoundingClientRect();
+  const sombra = g.createLinearGradient(0, 0, 0, rb.bottom);
+  sombra.addColorStop(0, 'rgba(0,0,0,.45)'); sombra.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = sombra; g.fillRect(0, 0, W, rb.bottom);
+  const logo = $('logo');
+  let xNombre = 10;
+  if (logo && logo.complete && logo.naturalWidth) {
+    const rl = logo.getBoundingClientRect();
+    g.drawImage(logo, rl.left, rl.top, rl.width, rl.height);
+    xNombre = rl.right + 8;
+  }
+  const rt = $('titulo').getBoundingClientRect();
+  g.save();
+  g.font = '800 17px system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+  g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 3; g.shadowOffsetY = 1; g.fillStyle = '#fff';
+  g.fillText($('titulo').textContent, xNombre, rt.top + rt.height / 2, W - xNombre - 12);
+  g.restore();
+  // panel de datos
+  const panel = $('panel');
+  if (!panel.classList.contains('oculto')) {
+    const rp = panel.getBoundingClientRect();
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 8; g.shadowOffsetY = 2;
+    g.fillStyle = 'rgba(255,255,255,.86)';
+    g.beginPath();
+    if (g.roundRect) g.roundRect(rp.left, rp.top, rp.width, rp.height, 16); else g.rect(rp.left, rp.top, rp.width, rp.height);
+    g.fill();
+    g.restore();
+    g.textAlign = 'left'; g.textBaseline = 'middle';
+    panel.querySelectorAll('.dato').forEach((fila) => {
+      const foco = fila.classList.contains('foco');
+      const b = fila.querySelector('b'), v = fila.querySelector('.valor');
+      if (b) {
+        const r = b.getBoundingClientRect();
+        g.font = '800 13px system-ui, sans-serif'; g.fillStyle = foco ? '#1B2F6E' : '#111';
+        g.fillText((foco ? '▸ ' : '') + b.textContent, r.left, r.top + r.height / 2);
+      }
+      if (v) {
+        const r = v.getBoundingClientRect(), roto = !!v.querySelector('.roto');
+        g.font = (roto ? '800' : '400') + ' 13px system-ui, sans-serif';
+        g.fillStyle = roto ? '#B22318' : foco ? '#1B2F6E' : '#111';
+        g.fillText(v.textContent, r.left, r.top + r.height / 2, Math.max(20, rp.right - r.left - 8));
+      }
+    });
+    const rg = $('grafica').getBoundingClientRect();
+    g.drawImage($('grafica'), rg.left, rg.top, rg.width, rg.height);
+  }
+}
+const nombreArchivo = () => 'illari-' + ((params.get('mol') || 'molecula').replace(/[^a-z0-9-]/gi, '') || 'molecula');
+$('btnFoto').onclick = async () => {
+  $('flash').style.opacity = 0.8; setTimeout(() => ($('flash').style.opacity = 0), 150);
+  try { await IllariCaptura.foto(componer, nombreArchivo()); avisar('Foto guardada en Descargas'); }
+  catch (e) { console.warn(e); avisar('No se pudo tomar la foto'); }
+};
+const grabadora = IllariCaptura.grabadora({
+  componer, nombre: nombreArchivo, avisar: (t) => avisar(t, 2200),
+  alCambiar: (estado, s) => {
+    const b = $('btnGrabar'), r = $('rec');
+    const grabando = estado === 'grabando';
+    b.classList.toggle('grabando', grabando);
+    b.setAttribute('aria-label', grabando ? 'Detener grabación' : 'Grabar video');
+    b.title = b.getAttribute('aria-label');
+    r.classList.toggle('ver', grabando);
+    const t = (n) => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
+    if (grabando) r.textContent = `● ${t(s)} / ${t(window.__illariMaxSegundos || IllariCaptura.MAX_SEGUNDOS)}`;
+  },
+});
+$('btnGrabar').onclick = () => grabadora.alternar();
 
 // Para pruebas: manos simuladas y estado
 let simulando = null, sinGiro = false;

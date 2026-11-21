@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe-v1.4.2.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js@3.4.5/aframe/build/aframe-ar.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.5.4/dist/aframe-extras.min.js"></script>
+  <script src="captura.js"></script>
   <style>
     html, body { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; background: transparent; }
     .capa { position: fixed; left: 0; right: 0; z-index: 10; pointer-events: none; }
@@ -47,6 +48,12 @@
     #barra #btn-foto svg { color: #1B2F6E; width: 30px; height: 30px; }
     #barra button:active { transform: scale(.92); }
     #flash { position: fixed; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; transition: opacity .25s; }
+    #barra #btn-video i { display: block; width: 22px; height: 22px; border-radius: 11px; background: #E53935; transition: all .2s; }
+    #barra #btn-video.grabando { background: #fff; }
+    #barra #btn-video.grabando i { width: 18px; height: 18px; border-radius: 4px; }
+    #rec { position: fixed; left: 50%; transform: translateX(-50%); bottom: 154px; z-index: 11; display: none; padding: 5px 12px;
+           border-radius: 14px; background: rgba(211,47,47,.92); color: #fff; font: bold 14px Arial, sans-serif; }
+    #rec.ver { display: block; }
     .app #info-btn { display: none; } /* dentro de la app, la info la muestra la app */
     .arjs-loader { display: none !important; }
   </style>
@@ -69,8 +76,9 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 7h-3l-2-3H9L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>
     </button>
-    <span style="width:52px" aria-hidden="true"></span>
+    <button id="btn-video" aria-label="Grabar video"><i></i></button>
   </div>
+  <div id="rec"></div>
   <div id="flash"></div>
   <div id="info"><button class="cerrar" aria-label="Cerrar">✕</button><div id="info-contenido"></div></div>
 
@@ -240,14 +248,10 @@
     } catch (e) { avisar('Este celular no tiene otra cámara disponible'); }
   };
 
-  // ---------- Captura: imagen de la cámara + modelos 3D + marca de Illari
-  async function capturar() {
+  // ---------- Foto y video: imagen de la cámara + modelos 3D + marca de Illari
+  function componer(g, W, H) {
     const video = document.querySelector('video');
     const lienzo3d = escena.canvas;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const W = window.innerWidth, H = window.innerHeight;
-    const c = document.createElement('canvas'); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr);
-    const g = c.getContext('2d'); g.scale(dpr, dpr);
     g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
     if (video) { const r = video.getBoundingClientRect(); g.drawImage(video, r.left, r.top, r.width, r.height); }
     escena.renderer.render(escena.object3D, escena.camera);
@@ -262,21 +266,25 @@
     const marca = 'Illari OpenLab Académico · ' + tema.titulo;
     g.font = 'bold 13px Arial'; const ancho = Math.min(g.measureText(marca).width + 20, W - 20);
     g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(10, H - 38, ancho, 26);
-    g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.fillText(marca, 20, H - 25, W - 40);
-    $('flash').style.opacity = 0.8; setTimeout(() => ($('flash').style.opacity = 0), 150);
-    const blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.92));
-    return new File([blob], 'illari-' + tema.id + '-' + Date.now() + '.jpg', { type: 'image/jpeg' });
-  }
-  function descargar(archivo) {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(archivo); a.download = archivo.name;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.textAlign = 'left'; g.fillText(marca, 20, H - 25, W - 40);
   }
   $('btn-foto').onclick = async () => {
-    try { descargar(await capturar()); avisar('Captura guardada en Descargas'); }
+    $('flash').style.opacity = 0.8; setTimeout(() => ($('flash').style.opacity = 0), 150);
+    try { await IllariCaptura.foto(componer, 'illari-' + tema.id); avisar('Captura guardada en Descargas'); }
     catch (e) { avisar('No se pudo tomar la captura'); }
   };
+  const grabadora = IllariCaptura.grabadora({
+    componer, nombre: () => 'illari-' + tema.id, avisar,
+    alCambiar: (estado, s) => {
+      const grabando = estado === 'grabando';
+      $('btn-video').classList.toggle('grabando', grabando);
+      $('btn-video').setAttribute('aria-label', grabando ? 'Detener grabación' : 'Grabar video');
+      $('rec').classList.toggle('ver', grabando);
+      const t = (n) => Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
+      if (grabando) $('rec').textContent = '● ' + t(s) + ' / ' + t(window.__illariMaxSegundos || IllariCaptura.MAX_SEGUNDOS);
+    },
+  });
+  $('btn-video').onclick = () => grabadora.alternar();
 
   const items = [...document.querySelectorAll('a-asset-item')];
   let listos = 0;
