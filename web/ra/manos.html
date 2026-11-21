@@ -94,7 +94,7 @@
 <div id="intro">
   <div class="tarjeta">
     <h1 id="introTitulo">Con tus manos</h1>
-    <h2 id="introSub">🤏 Pinza sobre un átomo: agárralo y estíralo.<br>✊ Puño y mueve la mano: gira la molécula.<br>✌️ Acerca o aleja la mano: zoom.</h2>
+    <h2 id="introSub">🤏 Pinza sobre un átomo: agárralo y estíralo.<br>✊ Puño y mueve la mano: gira la molécula.<br>☝️ Señala con el índice y mueve la mano: mueve la molécula.<br>✌️ Acerca o aleja la mano: zoom.</h2>
     <button class="principal" id="btnEmpezar" disabled>Cargando…</button>
   </div>
 </div>
@@ -304,6 +304,18 @@ function aplicarZoom(z) {
   ultimaInteraccion = performance.now();
 }
 
+// Mover toda la molécula (píxeles de pantalla); su centro no sale de la zona libre
+function desplazar(dxPx, dyPx) {
+  if (!atomos.length || (!dxPx && !dyPx)) return;
+  const cen = centroide(componente(ancla)), m = 0.3;
+  let dx = dxPx / pxPorA, dy = -dyPx / pxPorA;
+  dx = Math.max(zona.xMin + m - cen.x, Math.min(zona.xMax - m - cen.x, dx));
+  dy = Math.max(zona.yMin + m - cen.y, Math.min(zona.yMax - m - cen.y, dy));
+  atomos.forEach((a) => { a.p.x += dx; a.p.y += dy; });
+  reposo.forEach((r) => { r.x += dx; r.y += dy; });
+  ultimaInteraccion = performance.now();
+}
+
 // Giro rígido de todas las posiciones alrededor de un punto (ángulos en radianes: ax alrededor de X, ay alrededor de Y)
 function girar(ax, ay, centro = centroide(atomos.map((_, i) => i))) {
   const cx = Math.cos(ax), sx = Math.sin(ax), cy = Math.cos(ay), sy = Math.sin(ay);
@@ -480,7 +492,7 @@ function actualizarPanel() {
     const iguales = Math.max(...vals) - Math.min(...vals) < 0.6;
     const min = Math.min(...vals), max = Math.max(...vals);
     const texto = iguales ? `${num(vals[0], 1)}°${vals.length > 1 ? ` (×${vals.length})` : ''}`
-      : vals.length === 2 ? vals.map((v) => num(v, 1) + '°').join(' · ') : `${num(min, 1)}° – ${num(max, 1)}°`;
+      : vals.length === 2 ? vals.map((v) => num(v, 1) + '°').join(' · ') : `${num(min, 1)}–${num(max, 1)}°`;
     filas.push(`<div class="dato"><b>Ángulo ${nombre}</b><span class="valor">${texto}</span></div>`);
   } else if (angulos.length) {
     filas.push(`<div class="dato"><b>Ángulo</b><span class="valor">—</span></div>`);
@@ -574,6 +586,7 @@ function aplicarAgarres() {
     const [a, b] = giros;
     const d = Math.hypot(a.x - b.x, a.y - b.y), dAntes = Math.hypot(a.px - b.px, a.py - b.py);
     if (dAntes > 10) aplicarZoom(zoom * (d / dAntes));
+    desplazar((a.x + b.x - a.px - b.px) / 2, (a.y + b.y - a.py - b.py) / 2);
   } else if (giros.length === 1) {
     const g = giros[0], dx = g.x - g.px, dy = g.y - g.py;
     if (dx || dy) girar(dy * 0.012, dx * 0.012);
@@ -675,13 +688,15 @@ const GESTO = {
   giro: 0.012,                    // radianes por píxel al girar con el puño
   zoom: 1.5,                      // sensibilidad del zoom al acercar/alejar la mano
 };
-// Clasifica la mano: 'puno' (todos los dedos doblados) o 'paz' (índice y medio estirados, anular y meñique doblados)
+// Clasifica la mano: 'puno' (todos los dedos doblados), 'paz' (índice y medio estirados, anular y meñique doblados)
+// o 'senalar' (solo el índice estirado)
 function clasificarMano(P) {
   const d = (a, b) => Math.hypot(P[a].x - P[b].x, P[a].y - P[b].y);
   const razon = [[8, 6], [12, 10], [16, 14], [20, 18]].map(([punta, art]) => d(punta, 0) / (d(art, 0) || 1));
   const estirado = razon.map((x) => x > GESTO.estirado), doblado = razon.map((x) => x < GESTO.doblado);
   if (doblado.every(Boolean) && razon[0] < GESTO.doblado - 0.05) return 'puno';
   if (estirado[0] && estirado[1] && doblado[2] && doblado[3]) return 'paz';
+  if (estirado[0] && doblado[1] && doblado[2] && doblado[3]) return 'senalar';
   return null;
 }
 let manosPrevias = [], siguienteId = 0;
@@ -728,6 +743,12 @@ function procesarManos(listas) {
         if (dx || dy) girar(dy * GESTO.giro, dx * GESTO.giro);
       }
       ultimaInteraccion = performance.now();
+    } else if (m.gesto === 'senalar' && !m.pinza) {
+      // ☝️ mover: la molécula sigue a la mano (arriba, abajo, a los lados)
+      soltar(m.id);
+      if (m.gestoAntes === 'senalar' && m.centroSuaveAntes)
+        desplazar(m.centroSuave.x - m.centroSuaveAntes.x, m.centroSuave.y - m.centroSuaveAntes.y);
+      ultimaInteraccion = performance.now();
     } else if (m.gesto === 'paz' && !m.pinza) {
       // ✌️ zoom: acercar la mano a la cámara agranda la molécula
       soltar(m.id);
@@ -741,19 +762,42 @@ function procesarManos(listas) {
   manosPrevias = actuales;
   dibujarManos(actuales);
 }
-// Indicadores: circulito de la pinza (amarillo al sujetar un átomo); ⟲ al girar con el puño; ± al hacer zoom
+// Íconos dentro del círculo: girar (flecha circular), mover (cruz de flechas), zoom (±)
+function dibujarIcono(c, gesto, x, y) {
+  c.save();
+  c.strokeStyle = '#fff'; c.fillStyle = '#fff'; c.lineWidth = 2.5; c.lineCap = 'round'; c.lineJoin = 'round';
+  const punta = (px, py, ang) => {
+    c.beginPath();
+    c.moveTo(px + 6 * Math.cos(ang + 2.5), py + 6 * Math.sin(ang + 2.5));
+    c.lineTo(px, py);
+    c.lineTo(px + 6 * Math.cos(ang - 2.5), py + 6 * Math.sin(ang - 2.5));
+    c.stroke();
+  };
+  if (gesto === 'puno') {
+    c.beginPath(); c.arc(x, y, 10, -Math.PI * 0.2, Math.PI * 1.4); c.stroke();
+    const a = Math.PI * 1.4;
+    punta(x + 10 * Math.cos(a), y + 10 * Math.sin(a), a + Math.PI / 2);
+  } else if (gesto === 'senalar') {
+    c.beginPath(); c.moveTo(x - 12, y); c.lineTo(x + 12, y); c.moveTo(x, y - 12); c.lineTo(x, y + 12); c.stroke();
+    punta(x + 12, y, 0); punta(x - 12, y, Math.PI); punta(x, y - 12, -Math.PI / 2); punta(x, y + 12, Math.PI / 2);
+  } else {
+    c.font = '800 22px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('±', x, y + 1);
+  }
+  c.restore();
+}
+// Indicadores: circulito de la pinza (amarillo al sujetar un átomo); íconos al girar, mover o hacer zoom
 function dibujarManos(manos) {
   const c = $('manos').getContext('2d'), k = devicePixelRatio;
   c.setTransform(k, 0, 0, k, 0, 0);
   c.clearRect(0, 0, W, H);
   for (const m of manos) {
     c.lineWidth = 3;
-    if (m.gesto === 'puno' || (m.gesto === 'paz' && !m.pinza)) {
+    if (m.gesto === 'puno' || ((m.gesto === 'paz' || m.gesto === 'senalar') && !m.pinza)) {
       const p = m.centroSuave;
       c.strokeStyle = '#ffffff'; c.fillStyle = 'rgba(27,47,110,.55)';
       c.beginPath(); c.arc(p.x, p.y, 24, 0, 2 * Math.PI); c.fill(); c.stroke();
-      c.fillStyle = '#fff'; c.font = '800 22px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(m.gesto === 'puno' ? '⟲' : '±', p.x, p.y + 1);
+      dibujarIcono(c, m.gesto, p.x, p.y);
       continue;
     }
     const g = agarres.get(m.id);
