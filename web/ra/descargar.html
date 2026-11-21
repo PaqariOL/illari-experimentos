@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Usar sin internet · Illari OpenLab</title>
+<style>
+  :root { --fondo: #B8E3E9; --azul: #1B2F6E; --boton: #95B3B8; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--fondo); color: #111; font-family: system-ui, -apple-system, Roboto, sans-serif; }
+  main { max-width: 440px; margin: 0 auto; padding: 24px 18px 40px; }
+  #logo { display: block; height: 44px; margin: 4px auto 18px; }
+  .tarjeta { background: rgba(255,255,255,.7); border-radius: 18px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+  h1 { margin: 0 0 4px; font-size: 20px; color: var(--azul); }
+  h2 { margin: 0 0 14px; font-size: 16px; font-weight: 600; }
+  p { margin: 0 0 12px; font-size: 15px; line-height: 1.45; }
+  .peso { font-size: 30px; font-weight: 800; color: var(--azul); margin: 6px 0 2px; }
+  .detalle { font-size: 13px; color: #333; margin: 0 0 16px; }
+  .detalle li { margin-bottom: 2px; }
+  .botones { display: flex; gap: 10px; }
+  button { flex: 1; height: 50px; border: 0; border-radius: 12px; font-size: 16px; font-weight: 800; }
+  button:active { opacity: .7; }
+  .principal { background: var(--azul); color: #fff; }
+  .secundario { background: var(--boton); color: #000; }
+  .barra { height: 12px; border-radius: 6px; background: rgba(0,0,0,.12); overflow: hidden; margin: 14px 0 8px; }
+  .barra div { height: 100%; width: 0; background: var(--azul); transition: width .2s; }
+  .ok { color: #1E7B34; }
+  .mal { color: #B22318; }
+  .oculto { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <img id="logo" src="logo_illari_ar.png" alt="Illari OpenLab" onerror="this.remove()" />
+  <div class="tarjeta">
+    <h1>Usar sin internet</h1>
+    <h2 id="nombre">Preparando…</h2>
+
+    <!-- 1. Calculando -->
+    <section id="calculando"><p>Revisando qué falta descargar…</p></section>
+
+    <!-- 2. Confirmación -->
+    <section id="confirmar" class="oculto">
+      <p>¿Estás seguro de que deseas descargar este contenido para usarlo sin internet?</p>
+      <div class="peso" id="peso"></div>
+      <ul class="detalle" id="detalle"></ul>
+      <div class="botones">
+        <button class="secundario" id="btnCancelar">Cancelar</button>
+        <button class="principal" id="btnDescargar">Descargar</button>
+      </div>
+    </section>
+
+    <!-- 3. Descargando -->
+    <section id="descargando" class="oculto">
+      <p id="textoProgreso">Descargando…</p>
+      <div class="barra"><div id="progreso"></div></div>
+      <p class="detalle">No cierres esta pestaña hasta que termine.</p>
+    </section>
+
+    <!-- 4. Resultado -->
+    <section id="resultado" class="oculto">
+      <p id="textoResultado"></p>
+      <div class="botones" id="botonesResultado"></div>
+    </section>
+  </div>
+</main>
+
+<script type="module">
+// Mismas versiones que usan los visores (si se cambian allá, hay que cambiarlas aquí)
+const CDN = 'https://cdn.jsdelivr.net/npm/';
+const DRACO = 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/';
+const MEDIAPIPE = CDN + '@mediapipe/tasks-vision@0.10.35';
+const MODELO_MANOS = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+const CACHE = 'illari-ra-v1'; // igual que en sw.js
+
+// Tamaño aproximado de cada archivo (bytes), para calcular el peso antes de descargar
+const KB = 1024, MB = 1024 * 1024;
+const COMUNES = [
+  ['temas.json', 60 * KB], ['captura.js', 14 * KB], ['logo_illari_ar.png', 60 * KB],
+  [CDN + 'mp4-muxer@5.2.2/build/mp4-muxer.js', 74 * KB],
+];
+const PARA_TEMA = [
+  ['visor.html', 19 * KB], ['visor3d.html', 5 * KB], ['camera_para.dat', 1 * KB],
+  [CDN + 'aframe@1.4.2/dist/aframe-v1.4.2.min.js', 1.33 * MB],
+  [CDN + '@ar-js-org/ar.js@3.4.5/aframe/build/aframe-ar.js', 1.66 * MB],
+  [CDN + 'aframe-extras@7.5.4/dist/aframe-extras.min.js', 171 * KB],
+  [CDN + '@google/model-viewer@4.3.1/dist/model-viewer.min.js', 1.07 * MB],
+  [DRACO + 'draco_wasm_wrapper.js', 60 * KB], [DRACO + 'draco_decoder.wasm', 285 * KB],
+];
+const PARA_MOLECULA = [
+  ['manos.html', 45 * KB],
+  [CDN + 'three@0.170.0/build/three.module.min.js', 692 * KB],
+  [MEDIAPIPE + '/vision_bundle.mjs', 137 * KB],
+  [MODELO_MANOS, 7.82 * MB],
+];
+
+const $ = (id) => document.getElementById(id);
+const ver = (id) => ['calculando', 'confirmar', 'descargando', 'resultado'].forEach((s) => $(s).classList.toggle('oculto', s !== id));
+const mb = (b) => (b >= MB ? (b / MB).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / KB)) + ' KB');
+const q = new URLSearchParams(location.search);
+const abs = (u) => new URL(u, location.href).href;
+// las páginas propias se guardan sin "?…" (así las encuentra sw.js)
+const clave = (u) => { const x = new URL(u); return x.origin === location.origin ? x.origin + x.pathname : x.href; };
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+function terminar(texto, clase, botones = []) {
+  $('textoResultado').innerHTML = texto;
+  $('textoResultado').className = clase || '';
+  $('botonesResultado').innerHTML = '';
+  botones.forEach(([t, c, f]) => { const b = document.createElement('button'); b.textContent = t; b.className = c; b.onclick = f; $('botonesResultado').appendChild(b); });
+  ver('resultado');
+}
+const cerrar = () => { window.close(); setTimeout(() => terminar('Puedes cerrar esta pestaña para volver a la app.', ''), 200); };
+
+async function lista() {
+  const datos = await fetch('temas.json', { cache: 'no-cache' }).then((r) => r.json());
+  const archivos = [...COMUNES];
+  let nombre, tipo;
+  if (q.get('tema')) {
+    const t = datos.temas.find((x) => x.id === q.get('tema'));
+    if (!t) throw new Error('No se encontró el tema.');
+    nombre = t.titulo; tipo = 'tema';
+    archivos.push(...PARA_TEMA);
+    const modelos = new Map();
+    [...t.modelos, ...t.combinaciones].forEach((m) => m.archivo && modelos.set(m.archivo, (m.kb || 500) * KB));
+    modelos.forEach((peso, ruta) => archivos.push(['../' + ruta, peso, 'modelo']));
+  } else if (q.get('mol')) {
+    const m = (datos.moleculas || []).find((x) => x.id === q.get('mol'));
+    if (!m) throw new Error('No se encontró la molécula.');
+    nombre = m.nombre; tipo = 'molécula';
+    archivos.push(...PARA_MOLECULA, [m.archivo, 4 * KB, 'molecula']);
+    // detector de manos: la versión que corresponde a este celular
+    let simd = true;
+    try { const { FilesetResolver } = await import(MEDIAPIPE + '/vision_bundle.mjs'); simd = await FilesetResolver.isSimdSupported(); } catch (e) {}
+    const base = MEDIAPIPE + '/wasm/vision_wasm' + (simd ? '' : '_nosimd') + '_internal';
+    archivos.push([base + '.js', 322 * KB], [base + '.wasm', (simd ? 10.64 : 10.0) * MB]);
+  } else {
+    throw new Error('No se indicó qué descargar.');
+  }
+  return { nombre, tipo, archivos: archivos.map(([u, peso, clase]) => ({ url: abs(u), clave: clave(abs(u)), peso, clase })) };
+}
+
+async function faltantes(archivos) {
+  const c = await caches.open(CACHE);
+  const r = [];
+  for (const a of archivos) if (!(await c.match(a.clave))) r.push(a);
+  return r;
+}
+
+async function bajar(a, c) {
+  const propio = new URL(a.url).origin === location.origin;
+  let r;
+  try { r = await fetch(a.url, { mode: propio ? 'same-origin' : 'cors', cache: 'no-cache' }); }
+  catch (e) { r = await fetch(a.url, { mode: 'no-cors' }); }
+  if (!(r.ok || r.type === 'opaque')) throw new Error(a.url + ' → ' + r.status);
+  await c.put(a.clave, r);
+}
+
+async function descargar(pendientes, total, nombre) {
+  ver('descargando');
+  try { await navigator.storage?.persist?.(); } catch (e) {}
+  const c = await caches.open(CACHE);
+  let hecho = 0, i = 0;
+  const fallidos = [];
+  const avanzar = () => {
+    $('progreso').style.width = Math.min(100, (100 * hecho) / total) + '%';
+    $('textoProgreso').textContent = `Descargando… ${mb(hecho)} de ${mb(total)}`;
+  };
+  avanzar();
+  const trabajador = async () => {
+    while (i < pendientes.length) {
+      const a = pendientes[i++];
+      try { await bajar(a, c); } catch (e) { fallidos.push(a); }
+      hecho += a.peso; avanzar();
+    }
+  };
+  await Promise.all([trabajador(), trabajador(), trabajador()]);
+  if (fallidos.length) {
+    terminar(`No se pudieron descargar ${fallidos.length} archivo(s). Revisa tu conexión e inténtalo de nuevo.`, 'mal',
+      [['Cerrar', 'secundario', cerrar], ['Reintentar', 'principal', () => descargar(fallidos, fallidos.reduce((s, a) => s + a.peso, 0), nombre)]]);
+  } else {
+    terminar(`<b class="ok">✓ Listo.</b> «${nombre}» ya se puede usar sin internet en este celular.`, '', [['Cerrar', 'principal', cerrar]]);
+  }
+}
+
+try {
+  if (!('caches' in window)) throw new Error('Este navegador no permite guardar contenido sin internet.');
+  const { nombre, tipo, archivos } = await lista();
+  $('nombre').textContent = nombre;
+  const pendientes = await faltantes(archivos);
+  if (!pendientes.length) {
+    terminar(`<b class="ok">✓ Ya está descargado.</b> «${nombre}» se puede usar sin internet en este celular.`, '', [['Cerrar', 'principal', cerrar]]);
+  } else {
+    const total = pendientes.reduce((s, a) => s + a.peso, 0);
+    $('peso').textContent = '≈ ' + mb(total);
+    const grupo = (f) => pendientes.filter(f).reduce((s, a) => s + a.peso, 0);
+    const modelos = grupo((a) => a.clase === 'modelo' || a.clase === 'molecula');
+    const detector = grupo((a) => /mediapipe|hand_landmarker/.test(a.url));
+    const resto = total - modelos - detector;
+    $('detalle').innerHTML = [
+      modelos ? `<li>${tipo === 'tema' ? 'Modelos 3D del tema' : 'Archivo de la molécula'}: ${mb(modelos)}</li>` : '',
+      detector ? `<li>Detector de manos (una sola vez): ${mb(detector)}</li>` : '',
+      resto ? `<li>Visores y librerías (una sola vez): ${mb(resto)}</li>` : '',
+    ].join('');
+    ver('confirmar');
+    $('btnCancelar').onclick = () => terminar('Descarga cancelada. No se descargó nada.', '', [['Cerrar', 'principal', cerrar]]);
+    $('btnDescargar').onclick = () => descargar(pendientes, total, nombre);
+  }
+} catch (e) {
+  $('nombre').textContent = '';
+  terminar(e.message || 'No se pudo preparar la descarga. Revisa tu conexión.', 'mal', [['Cerrar', 'secundario', cerrar]]);
+}
+</script>
+</body>
+</html>

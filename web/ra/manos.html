@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Con tus manos · Illari OpenLab</title>
 <script src="captura.js"></script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {}); /* uso sin internet */</script>
 <style>
   :root { --fondo: #B8E3E9; --azul: #1B2F6E; --panel: rgba(255, 255, 255, 0.86); --texto: #111; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -973,7 +974,9 @@ async function cargarMolecula() {
   }
   if (!archivo && id) archivo = `moleculas/${id}.sdf`;
   if (!archivo) throw new Error('No se indicó ninguna molécula.');
-  const r = await fetch(archivo, { cache: 'no-cache' });
+  let r;
+  try { r = await fetch(archivo, { cache: 'no-cache' }); }
+  catch (e) { throw new Error('Esta molécula no está descargada en el celular. Conéctate a internet o, con internet, usa su botón de descarga para usarla sin conexión.'); }
   if (!r.ok) throw new Error('No se encontró el archivo de la molécula.');
   const datos = leerSDF(await r.text());
   return { ...datos, nombre: nombre || datos.nombre || 'Molécula' };
