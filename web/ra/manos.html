@@ -202,6 +202,8 @@ const centroLibre = () => aMundo(W / 2, ($('barra').getBoundingClientRect().bott
 
 // ============================================================ Molécula
 let atomos = [], enlaces = [], angulos = [], original = null;
+let ancla = 0;     // único átomo fijo (salvo que lo agarren): el de más enlaces, el más cercano al centro
+let reposo = [];   // forma de la molécula en reposo (gira y se traslada junto con ella)
 const morse = (e, r) => e.De * (1 - Math.exp(-e.alfa * (r - e.re))) ** 2;
 const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const largo = (v) => Math.hypot(v.x, v.y, v.z);
@@ -241,6 +243,11 @@ function prepararMolecula(datos) {
       angulos.push({ c, i: vs[i], j: vs[j], cos0, lineal: cos0 < -0.985 });
     }
   });
+  // átomo ancla
+  const cen0 = centroide(atomos.map((_, i) => i));
+  const maxG = Math.max(...grado);
+  ancla = atomos.map((a, i) => i).filter((i) => grado[i] === maxG)
+    .sort((i, j) => largo(sub(atomos[i].p, cen0)) - largo(sub(atomos[j].p, cen0)))[0] ?? 0;
   // tamaño de la vista según el tamaño de la molécula (con espacio para estirar)
   const cen = centroide(atomos.map((_, i) => i));
   const R = Math.max(0.5, ...atomos.map((a) => largo(sub(a.p, cen)) + a.radio));
@@ -268,6 +275,7 @@ function reiniciar() {
   if (!plana) girar(0.35, -0.45, { x: 0, y: 0, z: 0 });
   const c = centroLibre();
   atomos.forEach((a) => { a.p.x += c.x; a.p.y += c.y; });
+  reposo = atomos.map((a) => ({ ...a.p }));
   ultimaInteraccion = -1e9;
 }
 
@@ -285,12 +293,14 @@ function girar(ax, ay, centro = centroide(atomos.map((_, i) => i))) {
     a.p = { x: q.x + centro.x, y: q.y + centro.y, z: q.z + centro.z };
     a.v = rot(a.v);
   });
+  reposo = reposo.map((r) => { const q = rot(sub(r, centro)); return { x: q.x + centro.x, y: q.y + centro.y, z: q.z + centro.z }; });
 }
 
 // ============================================================ Física
-// Los H se mueven libres; los demás átomos quedan quietos salvo que los agarres (así, jalar un átomo estira su enlace).
-// Agarrar el átomo central (el de más enlaces) mueve toda la molécula.
-const K_ENLACE = 25, K_ANGULO = 8, AMORTIGUAR = 5;
+// Solo el átomo ancla queda quieto (salvo que lo agarres: entonces mueve toda la molécula).
+// Los demás sienten los enlaces, los ángulos y una "memoria de forma" suave que los devuelve a su lugar al soltarlos.
+// Los pedazos que se separan (enlace roto) quedan libres.
+const K_ENLACE = 25, K_ANGULO = 8, K_FORMA = 3, AMORTIGUAR = 5;
 function paso(dt) {
   const f = atomos.map(() => ({ x: 0, y: 0, z: 0 }));
   const suma = (i, v, k) => { f[i].x += v.x * k; f[i].y += v.y * k; f[i].z += v.z * k; };
@@ -319,10 +329,15 @@ function paso(dt) {
     const d = sub(atomos[j].p, atomos[i].p), r = largo(d) || 1e-6, min = 1.1;
     if (r < min) { suma(i, d, -30 * (min - r) / r); suma(j, d, 30 * (min - r) / r); }
   }
+  const unidos = new Set(componente(ancla));
   atomos.forEach((a, i) => {
-    if (a.agarrado || !a.esH) { a.v = { x: 0, y: 0, z: 0 }; return; }
+    if (unidos.has(i) && reposo[i]) suma(i, sub(reposo[i], a.p), K_FORMA);
+  });
+  atomos.forEach((a, i) => {
+    if (a.agarrado || (i === ancla && !a.agarrado)) { a.v = { x: 0, y: 0, z: 0 }; return; }
+    const masa = a.esH ? 1 : 3;
     const am = Math.exp(-AMORTIGUAR * dt);
-    a.v.x = (a.v.x + f[i].x * dt) * am; a.v.y = (a.v.y + f[i].y * dt) * am; a.v.z = (a.v.z + f[i].z * dt) * am;
+    a.v.x = (a.v.x + (f[i].x / masa) * dt) * am; a.v.y = (a.v.y + (f[i].y / masa) * dt) * am; a.v.z = (a.v.z + (f[i].z / masa) * dt) * am;
     a.p.x += a.v.x * dt; a.p.y += a.v.y * dt; a.p.z += a.v.z * dt;
     const q = limitar(a, a.p);
     if (q.x !== a.p.x) { a.p.x = q.x; a.v.x *= -0.4; }
@@ -347,7 +362,7 @@ function componente(i) {
   while (cola.length) for (const v of vecinos(cola.pop())) if (!vis.has(v)) { vis.add(v); cola.push(v); }
   return [...vis];
 }
-const esCentral = (i) => atomos[i].grado === Math.max(...atomos.map((a) => a.grado)) && atomos[i].grado > 1;
+const esCentral = (i) => i === ancla && atomos[i].grado > 1;
 
 // ============================================================ Dibujo
 let esferas = [], barras = [], etiquetas = [];
@@ -542,6 +557,7 @@ function aplicarAgarres() {
       // el átomo central arrastra todo lo que está unido a él
       const dx = n.x - a.p.x, dy = n.y - a.p.y;
       for (const j of componente(g.atomo)) if (j !== g.atomo && !atomos[j].agarrado) { atomos[j].p.x += dx; atomos[j].p.y += dy; }
+      reposo.forEach((r) => { r.x += dx; r.y += dy; });
     }
     a.p.x = n.x; a.p.y = n.y;
   }
