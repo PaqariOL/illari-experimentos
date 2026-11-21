@@ -56,7 +56,7 @@
   #intro.oculto { display: none; }
   .tarjeta { width: 100%; max-width: 420px; padding: 18px; border-radius: 18px; background: var(--fondo); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
   .tarjeta h1 { margin: 0 0 4px; font-size: 20px; color: var(--azul); }
-  .tarjeta h2 { margin: 0 0 16px; font-size: 15px; color: #222; font-weight: 600; }
+  .tarjeta h2 { margin: 0 0 16px; font-size: 15px; line-height: 1.7; color: #222; font-weight: 600; }
   .principal { width: 100%; height: 50px; border: 0; background: var(--azul); color: #fff; font-size: 16px; font-weight: 800;
     border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,.25); }
   .principal:active { opacity: .7; }
@@ -94,7 +94,7 @@
 <div id="intro">
   <div class="tarjeta">
     <h1 id="introTitulo">Con tus manos</h1>
-    <h2 id="introSub">Junta pulgar e índice sobre un átomo para agarrarlo. En un espacio vacío, gira la molécula.</h2>
+    <h2 id="introSub">🤏 Pinza sobre un átomo: agárralo y estíralo.<br>✊ Puño y mueve la mano: gira la molécula.<br>✌️ Acerca o aleja la mano: zoom.</h2>
     <button class="principal" id="btnEmpezar" disabled>Cargando…</button>
   </div>
 </div>
@@ -184,14 +184,18 @@ const luz = new THREE.DirectionalLight(0xffffff, 1.6);
 luz.position.set(-3, 5, 8);
 escena.add(luz);
 
-let W = 0, H = 0, pxPorA = 100, mitadW = 1, mitadH = 1, anchoVista = 5.2;
-function medir() {
-  W = innerWidth; H = innerHeight;
-  render.setSize(W, H, false);
-  pxPorA = Math.min(W, H) / anchoVista;
+let W = 0, H = 0, pxPorA = 100, mitadW = 1, mitadH = 1, anchoVista = 5.2, zoom = 1;
+const ZOOM_MIN = 0.5, ZOOM_MAX = 2.5;
+function ajustarEscala() {
+  pxPorA = (Math.min(W, H) / anchoVista) * zoom;
   mitadW = W / 2 / pxPorA; mitadH = H / 2 / pxPorA;
   Object.assign(camara, { left: -mitadW, right: mitadW, top: mitadH, bottom: -mitadH });
   camara.updateProjectionMatrix();
+}
+function medir() {
+  W = innerWidth; H = innerHeight;
+  render.setSize(W, H, false);
+  ajustarEscala();
   const c = $('manos'); c.width = W * devicePixelRatio; c.height = H * devicePixelRatio;
   const g = $('grafica'); g.width = g.clientWidth * devicePixelRatio; g.height = g.clientHeight * devicePixelRatio;
 }
@@ -274,6 +278,7 @@ function reiniciar() {
   enlaces.forEach((e) => (e.roto = false));
   agarres.clear();
   foco = null;
+  zoom = 1; ajustarEscala(); calcularZona();
   // orientación inicial: si la molécula no es plana, se inclina un poco para que se vea en 3D
   const cen = centroide(atomos.map((_, i) => i));
   atomos.forEach((a) => { a.p = sub(a.p, cen); });
@@ -283,6 +288,20 @@ function reiniciar() {
   atomos.forEach((a) => { a.p.x += c.x; a.p.y += c.y; });
   reposo = atomos.map((a) => ({ ...a.p }));
   ultimaInteraccion = -1e9;
+}
+
+// Zoom: la molécula crece o se achica sin moverse de su lugar en la pantalla
+function aplicarZoom(z) {
+  z = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+  if (Math.abs(z - zoom) < 1e-4 || !atomos.length) return;
+  const cen = centroide(componente(ancla)), s = aPantalla(cen);
+  zoom = z;
+  ajustarEscala();
+  calcularZona();
+  const n = aMundo(s.x, s.y), dx = n.x - cen.x, dy = n.y - cen.y;
+  atomos.forEach((a) => { a.p.x += dx; a.p.y += dy; });
+  reposo.forEach((r) => { r.x += dx; r.y += dy; });
+  ultimaInteraccion = performance.now();
 }
 
 // Giro rígido de todas las posiciones alrededor de un punto (ángulos en radianes: ax alrededor de X, ay alrededor de Y)
@@ -524,14 +543,15 @@ function atomoCercano(x, y) {
   });
   return mejor;
 }
-function agarrar(id, x, y) {
+function agarrar(id, x, y, soloAtomos = false) {
   ultimaInteraccion = performance.now();
   const i = atomoCercano(x, y);
   if (i >= 0) {
     agarres.set(id, { tipo: 'atomo', atomo: i, x, y });
     atomos[i].agarrado = id;
     foco = i;
-  } else {
+  } else if (!soloAtomos) {
+    // dedo en un espacio vacío: un dedo gira, dos dedos hacen zoom
     agarres.set(id, { tipo: 'girar', x, y, px: x, py: y });
   }
 }
@@ -549,13 +569,18 @@ function soltar(id) {
   ultimaInteraccion = performance.now();
 }
 function aplicarAgarres() {
+  const giros = [...agarres.values()].filter((g) => g.tipo === 'girar');
+  if (giros.length >= 2) {
+    const [a, b] = giros;
+    const d = Math.hypot(a.x - b.x, a.y - b.y), dAntes = Math.hypot(a.px - b.px, a.py - b.py);
+    if (dAntes > 10) aplicarZoom(zoom * (d / dAntes));
+  } else if (giros.length === 1) {
+    const g = giros[0], dx = g.x - g.px, dy = g.y - g.py;
+    if (dx || dy) girar(dy * 0.012, dx * 0.012);
+  }
+  giros.forEach((g) => { g.px = g.x; g.py = g.y; });
   for (const g of agarres.values()) {
-    if (g.tipo === 'girar') {
-      const dx = g.x - g.px, dy = g.y - g.py;
-      if (dx || dy) girar(dy * 0.012, dx * 0.012);
-      g.px = g.x; g.py = g.y;
-      continue;
-    }
+    if (g.tipo !== 'atomo') continue;
     const a = atomos[g.atomo];
     const obj = aMundo(g.x, g.y);
     const n = limitar(a, { x: obj.x, y: obj.y, z: a.p.z });
@@ -569,7 +594,10 @@ function aplicarAgarres() {
   }
 }
 
-lienzo.addEventListener('pointerdown', (ev) => { agarrar('toque' + ev.pointerId, ev.clientX, ev.clientY); lienzo.setPointerCapture(ev.pointerId); });
+lienzo.addEventListener('pointerdown', (ev) => {
+  agarrar('toque' + ev.pointerId, ev.clientX, ev.clientY);
+  try { lienzo.setPointerCapture(ev.pointerId); } catch { /* sin captura: igual funciona */ }
+});
 lienzo.addEventListener('pointermove', (ev) => mover('toque' + ev.pointerId, ev.clientX, ev.clientY));
 for (const t of ['pointerup', 'pointercancel']) lienzo.addEventListener(t, (ev) => soltar('toque' + ev.pointerId));
 
@@ -639,14 +667,33 @@ function puntoPantalla(l) {
   if (modoCamara === 'user') x = W - x;
   return { x, y };
 }
+// Umbrales de los gestos (se pueden ajustar)
+const GESTO = {
+  pinza: 0.32, soltarPinza: 0.5,  // distancia pulgar–índice ÷ tamaño de la mano
+  estirado: 1.15, doblado: 1.0,   // distancia punta–muñeca ÷ distancia articulación–muñeca
+  cuadros: 3,                     // cuadros seguidos para aceptar un gesto (evita saltos)
+  giro: 0.012,                    // radianes por píxel al girar con el puño
+  zoom: 1.5,                      // sensibilidad del zoom al acercar/alejar la mano
+};
+// Clasifica la mano: 'puno' (todos los dedos doblados) o 'paz' (índice y medio estirados, anular y meñique doblados)
+function clasificarMano(P) {
+  const d = (a, b) => Math.hypot(P[a].x - P[b].x, P[a].y - P[b].y);
+  const razon = [[8, 6], [12, 10], [16, 14], [20, 18]].map(([punta, art]) => d(punta, 0) / (d(art, 0) || 1));
+  const estirado = razon.map((x) => x > GESTO.estirado), doblado = razon.map((x) => x < GESTO.doblado);
+  if (doblado.every(Boolean) && razon[0] < GESTO.doblado - 0.05) return 'puno';
+  if (estirado[0] && estirado[1] && doblado[2] && doblado[3]) return 'paz';
+  return null;
+}
 let manosPrevias = [], siguienteId = 0;
 function procesarManos(listas) {
   const nuevas = listas.map((lms) => {
     const P = lms.map(puntoPantalla);
     const tam = Math.hypot(P[0].x - P[9].x, P[0].y - P[9].y) || 1;
-    return { apertura: Math.hypot(P[4].x - P[8].x, P[4].y - P[8].y) / tam, punto: { x: (P[4].x + P[8].x) / 2, y: (P[4].y + P[8].y) / 2 }, centro: P[9] };
+    return { apertura: Math.hypot(P[4].x - P[8].x, P[4].y - P[8].y) / tam, punto: { x: (P[4].x + P[8].x) / 2, y: (P[4].y + P[8].y) / 2 },
+      centro: P[9], tam, candidato: clasificarMano(P) };
   });
   const usadas = new Set();
+  const suave = (a, b, k = 0.55) => ({ x: a.x * (1 - k) + b.x * k, y: a.y * (1 - k) + b.y * k });
   const actuales = nuevas.map((m) => {
     let previa = null, dMin = Infinity;
     for (const p of manosPrevias) {
@@ -656,29 +703,61 @@ function procesarManos(listas) {
     }
     if (previa) usadas.add(previa.id);
     const id = previa ? previa.id : 'mano' + siguienteId++;
+    // gesto estable: el candidato debe repetirse varios cuadros seguidos
+    const cuenta = previa && previa.candidato === m.candidato ? previa.cuenta + 1 : 1;
+    const gestoAntes = previa ? previa.gesto : null;
+    const gesto = cuenta >= GESTO.cuadros ? m.candidato : gestoAntes;
     const antes = previa ? previa.pinza : false;
-    const pinza = antes ? m.apertura < 0.5 : m.apertura < 0.32;
-    const punto = previa ? { x: previa.punto.x * 0.45 + m.punto.x * 0.55, y: previa.punto.y * 0.45 + m.punto.y * 0.55 } : m.punto;
-    return { id, centro: m.centro, pinza, punto, nueva: pinza && !antes };
+    const pinza = gesto === 'puno' ? false : antes ? m.apertura < GESTO.soltarPinza : m.apertura < GESTO.pinza;
+    return {
+      id, centro: m.centro, candidato: m.candidato, cuenta, gesto, gestoAntes, pinza, nueva: pinza && !antes,
+      punto: previa ? suave(previa.punto, m.punto) : m.punto,
+      centroSuave: previa ? suave(previa.centroSuave, m.centro, 0.5) : m.centro,
+      centroSuaveAntes: previa ? previa.centroSuave : null,
+      tamSuave: previa ? previa.tamSuave * 0.6 + m.tam * 0.4 : m.tam,
+      tam0: previa ? previa.tam0 : m.tam, zoom0: previa ? previa.zoom0 : zoom,
+    };
   });
   for (const p of manosPrevias) if (!actuales.some((a) => a.id === p.id)) soltar(p.id);
   for (const m of actuales) {
-    if (m.nueva) agarrar(m.id, m.punto.x, m.punto.y);
+    if (m.gesto === 'puno') {
+      // ✊ girar: la molécula sigue el movimiento del puño
+      soltar(m.id);
+      if (m.gestoAntes === 'puno' && m.centroSuaveAntes) {
+        const dx = m.centroSuave.x - m.centroSuaveAntes.x, dy = m.centroSuave.y - m.centroSuaveAntes.y;
+        if (dx || dy) girar(dy * GESTO.giro, dx * GESTO.giro);
+      }
+      ultimaInteraccion = performance.now();
+    } else if (m.gesto === 'paz' && !m.pinza) {
+      // ✌️ zoom: acercar la mano a la cámara agranda la molécula
+      soltar(m.id);
+      if (m.gestoAntes !== 'paz') { m.tam0 = m.tamSuave; m.zoom0 = zoom; }
+      else aplicarZoom(m.zoom0 * (m.tamSuave / m.tam0) ** GESTO.zoom);
+      ultimaInteraccion = performance.now();
+    } else if (m.nueva) agarrar(m.id, m.punto.x, m.punto.y, true);
     else if (m.pinza) mover(m.id, m.punto.x, m.punto.y);
     else soltar(m.id);
   }
   manosPrevias = actuales;
   dibujarManos(actuales);
 }
-// Solo el circulito de la pinza: blanco al hacer la pinza, amarillo al sujetar un átomo
+// Indicadores: circulito de la pinza (amarillo al sujetar un átomo); ⟲ al girar con el puño; ± al hacer zoom
 function dibujarManos(manos) {
   const c = $('manos').getContext('2d'), k = devicePixelRatio;
   c.setTransform(k, 0, 0, k, 0, 0);
   c.clearRect(0, 0, W, H);
   for (const m of manos) {
+    c.lineWidth = 3;
+    if (m.gesto === 'puno' || (m.gesto === 'paz' && !m.pinza)) {
+      const p = m.centroSuave;
+      c.strokeStyle = '#ffffff'; c.fillStyle = 'rgba(27,47,110,.55)';
+      c.beginPath(); c.arc(p.x, p.y, 24, 0, 2 * Math.PI); c.fill(); c.stroke();
+      c.fillStyle = '#fff'; c.font = '800 22px system-ui'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(m.gesto === 'puno' ? '⟲' : '±', p.x, p.y + 1);
+      continue;
+    }
     const g = agarres.get(m.id);
     const sujeta = g && g.tipo === 'atomo';
-    c.lineWidth = 3;
     c.strokeStyle = m.pinza ? (sujeta ? '#F5B400' : '#ffffff') : 'rgba(255,255,255,.6)';
     c.fillStyle = m.pinza ? (sujeta ? 'rgba(245,180,0,.35)' : 'rgba(255,255,255,.25)') : 'transparent';
     c.beginPath(); c.arc(m.punto.x, m.punto.y, m.pinza ? 16 : 22, 0, 2 * Math.PI); c.fill(); c.stroke();
@@ -693,6 +772,8 @@ window.__lab = {
     atomos: atomos.map((a) => ({ el: a.el, ...a.p, agarrado: a.agarrado })),
     enlaces: enlaces.map((e) => ({ nombre: e.nombre, roto: e.roto, r: dist(e.a, e.b), De: e.De })),
     pantalla: atomos.map((a) => ({ ...aPantalla(a.p), z: a.p.z })),
+    zoom,
+    gestos: manosPrevias.map((m) => m.gesto),
   }),
   aNormalizado: (x, y) => {
     const vw = video.videoWidth || W, vh = video.videoHeight || H;
