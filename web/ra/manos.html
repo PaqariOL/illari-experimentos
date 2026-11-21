@@ -48,6 +48,8 @@
   .valor { font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
   .roto { color: #B22318; font-weight: 800; }
   #grafica { width: 150px; height: 118px; flex: none; align-self: center; }
+  #panel.oculto { display: none; }
+  .icono.apagado { background: rgba(255,255,255,.5); color: #555; }
 
   #intro { position: fixed; z-index: 10; inset: 0; display: flex; align-items: center; justify-content: center;
     padding: 20px; background: rgba(13,27,36,.72); }
@@ -70,6 +72,9 @@
 <div id="barra">
   <img id="logo" src="logo_illari_ar.png" alt="Illari OpenLab" onerror="this.remove()" />
   <div id="titulo">Con tus manos</div>
+  <button class="icono" id="btnPanel" aria-label="Ocultar datos" title="Ocultar datos" aria-pressed="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16c2-7 4-9 6-9s3 5 7 6"/></svg>
+  </button>
   <button class="icono" id="btnCamara" aria-label="Cambiar cámara" title="Cambiar cámara">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3l-2-3H9L7 7H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"/><path d="M9 13a3 3 0 0 1 5-2.2M15 13a3 3 0 0 1-5 2.2"/><path d="M14 9.5v1.5h-1.5M10 16.5V15h1.5"/></svg>
   </button>
@@ -195,8 +200,9 @@ const aPantalla = (p) => ({ x: W / 2 + p.x * pxPorA, y: H / 2 - p.y * pxPorA });
 
 let zona = { xMin: -1, xMax: 1, yMin: -1, yMax: 1 };
 function calcularZona() {
-  zona = { xMin: -mitadW, xMax: mitadW,
-    yMin: aMundo(0, $('panel').getBoundingClientRect().top).y, yMax: aMundo(0, $('barra').getBoundingClientRect().bottom).y };
+  const panel = $('panel');
+  const abajo = panel.classList.contains('oculto') ? H : panel.getBoundingClientRect().top;
+  zona = { xMin: -mitadW, xMax: mitadW, yMin: aMundo(0, abajo).y, yMax: aMundo(0, $('barra').getBoundingClientRect().bottom).y };
 }
 const centroLibre = () => aMundo(W / 2, ($('barra').getBoundingClientRect().bottom + 30 + $('panel').getBoundingClientRect().top) / 2);
 
@@ -591,6 +597,18 @@ $('btnCamara').onclick = async () => {
   await encenderCamara();
 };
 $('btnReiniciar').onclick = () => reiniciar();
+function mostrarPanel(ver) {
+  $('panel').classList.toggle('oculto', !ver);
+  const b = $('btnPanel');
+  b.classList.toggle('apagado', !ver);
+  b.setAttribute('aria-pressed', String(ver));
+  b.title = b.ariaLabel = ver ? 'Ocultar datos' : 'Mostrar datos';
+  b.setAttribute('aria-label', b.title);
+  calcularZona();
+  if (ver) actualizarPanel();
+  try { localStorage.setItem('illari:manos:panel', ver ? '1' : '0'); } catch { /* sin almacenamiento */ }
+}
+$('btnPanel').onclick = () => mostrarPanel($('panel').classList.contains('oculto'));
 $('btnAyuda').onclick = () => { $('btnEmpezar').textContent = 'Continuar'; $('intro').classList.remove('oculto'); };
 
 // ============================================================ Detección de manos (MediaPipe)
@@ -701,7 +719,7 @@ function bucle(t) {
   for (let i = 0; i < 4; i++) paso(dt / 4);
   aplicarAgarres();
   dibujarMolecula();
-  if (cuadro++ % 3 === 0) actualizarPanel();
+  if (cuadro++ % 3 === 0 && !$('panel').classList.contains('oculto')) actualizarPanel();
   requestAnimationFrame(bucle);
 }
 
@@ -736,6 +754,9 @@ cargarMolecula().then((datos) => {
   calcularZona();
   reiniciar();
   addEventListener('resize', () => { medir(); calcularZona(); });
+  let verPanel = true;
+  try { verPanel = localStorage.getItem('illari:manos:panel') !== '0'; } catch { /* sin almacenamiento */ }
+  if (!verPanel) mostrarPanel(false);
   requestAnimationFrame(bucle);
   const b = $('btnEmpezar');
   b.disabled = false; b.textContent = 'Empezar';
