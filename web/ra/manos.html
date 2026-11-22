@@ -73,6 +73,9 @@
   #intro.oculto { display: none; }
   .tarjeta { width: 100%; max-width: 420px; padding: 18px; border-radius: 18px; background: var(--fondo); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
   .tarjeta h1 { margin: 0 0 4px; font-size: 20px; color: var(--azul); }
+  .info { margin: 6px 0 14px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.65);
+    font-size: 15px; line-height: 1.45; color: #111; }
+  .info.oculto { display: none; }
   .tarjeta h2 { margin: 0 0 16px; font-size: 15px; line-height: 1.7; color: #222; font-weight: 600; }
   .principal { width: 100%; height: 50px; border: 0; background: var(--azul); color: #fff; font-size: 16px; font-weight: 800;
     border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,.25); }
@@ -119,6 +122,7 @@
 <div id="intro">
   <div class="tarjeta">
     <h1 id="introTitulo">Con tus manos</h1>
+    <p id="introInfo" class="info oculto"></p>
     <h2 id="introSub">🤏 Pinza sobre un átomo: agárralo y estíralo.<br>✊ Puño y mueve la mano: gira la molécula.<br>☝️ Señala con el índice y mueve la mano: mueve la molécula.<br>✌️ Acerca o aleja la mano: zoom.</h2>
     <button class="principal" id="btnEmpezar" disabled>Cargando…</button>
   </div>
@@ -964,12 +968,12 @@ function bucle(t) {
 // ============================================================ Inicio: cargar la molécula
 async function cargarMolecula() {
   const id = (params.get('mol') || '').toLowerCase();
-  let nombre = params.get('nombre') || '', archivo = params.get('archivo') || '';
+  let nombre = params.get('nombre') || '', archivo = params.get('archivo') || '', info = '';
   if (!archivo) {
     try {
       const datos = await (await fetch('temas.json', { cache: 'no-cache' })).json();
       const m = (datos.moleculas || []).find((x) => x.id === id);
-      if (m) { archivo = m.archivo; nombre = nombre || m.nombre; }
+      if (m) { archivo = m.archivo; nombre = nombre || m.nombre; info = m.info || m.descripcion || ''; }
     } catch { /* sin lista: se intenta con el nombre directo */ }
   }
   if (!archivo && id) archivo = `moleculas/${id}.sdf`;
@@ -979,7 +983,7 @@ async function cargarMolecula() {
   catch (e) { throw new Error('Esta molécula no está descargada en el celular. Conéctate a internet o, con internet, usa su botón de descarga para usarla sin conexión.'); }
   if (!r.ok) throw new Error('No se encontró el archivo de la molécula.');
   const datos = leerSDF(await r.text());
-  return { ...datos, nombre: nombre || datos.nombre || 'Molécula' };
+  return { ...datos, nombre: nombre || datos.nombre || 'Molécula', info };
 }
 
 medir();
@@ -988,6 +992,13 @@ let iniciado = false;
 cargarMolecula().then((datos) => {
   $('titulo').textContent = datos.nombre;
   $('introTitulo').textContent = datos.nombre;
+  if (datos.info) {
+    // texto del Excel: se respetan los saltos de línea (Alt+Enter) y no se interpreta como HTML
+    const el = $('introInfo');
+    el.textContent = '';
+    datos.info.split(/\r?\n/).forEach((linea, i) => { if (i) el.appendChild(document.createElement('br')); el.appendChild(document.createTextNode(linea)); });
+    el.classList.remove('oculto');
+  }
   prepararMolecula(datos);
   medir();
   actualizarPanel();
