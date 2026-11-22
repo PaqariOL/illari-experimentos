@@ -303,7 +303,7 @@ def validar_sdf(texto: str) -> str | None:
 
 
 def leer_moleculas(wb, destino: Path, avisos: list[str]) -> list[dict]:
-    """Hoja "Moléculas": Nombre | Archivo (.sdf) | Descripción | Grupo. Fila 2 = ejemplo."""
+    """Hoja "Moléculas": Nombre | Archivo (.sdf) | Descripción | Grupo | Información (opcional). Fila 2 = ejemplo."""
     hoja = next((wb[n] for n in wb.sheetnames if _clave(n) == "moleculas"), None)
     if hoja is None:
         return []
@@ -311,6 +311,7 @@ def leer_moleculas(wb, destino: Path, avisos: list[str]) -> list[dict]:
     col = lambda *nombres: next((enc[n] for n in nombres if n in enc), None)
     c_nom, c_arch = col("nombre", "molecula"), col("archivo-sdf", "archivo", "archivo-sdf-o-mol")
     c_desc, c_grupo = col("descripcion"), col("grupo")
+    c_info = col("informacion", "info")
     if not c_nom or not c_arch:
         avisos.append('Moléculas: faltan las columnas "Nombre" y "Archivo (.sdf)".')
         return []
@@ -349,6 +350,8 @@ def leer_moleculas(wb, destino: Path, avisos: list[str]) -> list[dict]:
             "archivo": f"moleculas/{fuente.name}",
             "descripcion": _texto(hoja.cell(r, c_desc).value) if c_desc else "",
             "grupo": (_texto(hoja.cell(r, c_grupo).value) if c_grupo else "") or "Moléculas",
+            # texto corto que se ve dentro del simulador (puede tener varias líneas)
+            "info": str(hoja.cell(r, c_info).value or "").strip() if c_info else "",
         })
     print(f"✔ {len(lista)} moléculas para «Con tus manos»")
     return lista
