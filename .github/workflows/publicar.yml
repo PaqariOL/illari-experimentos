@@ -1,5 +1,10 @@
 # Cada vez que subes cambios, convierte los experimentos (Excel + HTML) y la
 # Realidad Aumentada (ra.xlsx + modelos) y lo publica en GitHub Pages.
+#
+# Dos trabajos separados (forma recomendada por GitHub):
+#   1. construir: arma la carpeta public/ y la sube como paquete "github-pages"
+#   2. publicar:  empieza cuando el paquete ya está completo y lo publica
+# Así la publicación nunca busca el paquete antes de tiempo, y un «Re-run» no choca con un paquete anterior.
 name: Publicar experimentos
 
 on:
@@ -12,16 +17,14 @@ permissions:
   pages: write
   id-token: write
 
+# Si llega un cambio nuevo mientras se publica, se espera (no se cancela a medias)
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  publicar:
+  construir:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.despliegue.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
 
@@ -54,6 +57,13 @@ jobs:
         with:
           path: public
 
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
       - name: Publicar en GitHub Pages
         id: despliegue
         uses: actions/deploy-pages@v4
