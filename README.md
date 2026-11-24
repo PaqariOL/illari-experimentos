@@ -9,7 +9,7 @@ experimentos/                 ← un .html por experimento
 imagenes/                     ← imágenes que usan los HTML (opcional)
 ra.xlsx                       ← temas de Realidad Aumentada (modelos, marcadores, combinaciones)
 ra/info/                      ← textos de "Info" de cada tema (.html)
-ra/modelos/                   ← modelos .glb propios (opcional; si no, se toman de lvaapq/asdfgh)
+ra/modelos/                   ← modelos .glb propios (opcional; si no, se toman de lvaapq/asdfgh )
 ra/marcadores/codigos/        ← imágenes base de los marcadores (no tocar)
 web/ra/                       ← visores de RA y 3D (no hace falta tocarlos)
 scripts/                      ← convierten todo (no hace falta tocarlos)
