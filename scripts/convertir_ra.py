@@ -6,6 +6,7 @@ Realidad Aumentada: convierte ra.xlsx + modelos .glb en lo que usan la app y los
   public/ra/marcadores/*.png       imagen de cada marcador (A, B, C…)
   public/ra/marcadores/guia_marcadores.pdf   hoja para imprimir
   public/ra/visor.html, visor3d.html          visores (se copian desde web/ra/)
+  public/ra/guias/*.pdf            guías docentes de las rutas (desde ra/guias/)
 
 Lo llama convertir.py; no hace falta ejecutarlo por separado.
 """
@@ -32,6 +33,7 @@ CARPETA_RA = RAIZ / "ra"
 WEB_RA = RAIZ / "web" / "ra"
 CACHE = RAIZ / ".cache-modelos"
 CARPETA_MOLECULAS = CARPETA_RA / "moleculas"  # archivos .sdf / .mol para "Con tus manos"
+CARPETA_GUIAS = CARPETA_RA / "guias"  # guías docentes en PDF de las rutas
 
 # Si un modelo no está en ra/modelos/, se busca aquí (en este orden)
 FUENTES_MODELOS = [
@@ -357,6 +359,114 @@ def leer_moleculas(wb, destino: Path, avisos: list[str]) -> list[dict]:
     return lista
 
 
+def leer_rutas(wb, destino: Path, avisos: list[str], temas: list[dict], moleculas: list[dict]) -> list[dict]:
+    """Hoja "Rutas": viajes de «RA para aprender química / materiales». Fila 2 = ejemplo.
+
+    Ruta | Orden | Viaje | Activo | Ícono | Introducción | Experiencias | Guía (PDF) | Pregunta n | Opciones n | Correcta n | Explicación n
+    Experiencias: una por línea, "Tema: <título>" o "Molécula: <nombre>".
+    """
+    hoja = next((wb[n] for n in wb.sheetnames if _clave(n) == "rutas"), None)
+    if hoja is None:
+        return []
+    enc = {_clave(_texto(hoja.cell(1, c).value)): c for c in range(1, hoja.max_column + 1) if hoja.cell(1, c).value}
+
+    def celda(r, nombre, crudo=False):
+        c = enc.get(nombre)
+        if not c:
+            return ""
+        v = hoja.cell(r, c).value
+        return (str(v).strip() if v is not None else "") if crudo else _texto(v)
+
+    temas_por_id = {t["id"]: t for t in temas}
+    mols = {}
+    for m in moleculas:
+        mols.setdefault(_clave(m["nombre"]), m)
+        mols.setdefault(m["id"], m)
+        mols.setdefault(_clave(re.sub(r"\(.*?\)", "", m["nombre"])), m)
+
+    carpeta_g = destino / "guias"
+    rutas: dict[str, dict] = {}
+    for r in range(3, hoja.max_row + 1):
+        titulo = celda(r, "viaje")
+        if not titulo:
+            continue
+        if _clave(celda(r, "activo") or "si") in ("no", "0", "false"):
+            continue  # viaje en preparación (p. ej. faltan sus modelos)
+        ruta = celda(r, "ruta") or "Química"
+        rid = _clave(ruta)
+        try:
+            orden = float(celda(r, "orden").replace(",", "."))
+        except ValueError:
+            orden = 999
+            avisos.append(f"Rutas, fila {r}: el orden de '{titulo}' no es un número; va al final.")
+
+        experiencias = []
+        for linea in re.split(r"[\r\n;]+", celda(r, "experiencias", crudo=True)):
+            if not linea.strip():
+                continue
+            tipo, _, nombre = linea.partition(":")
+            tipo, nombre = _clave(tipo), nombre.strip()
+            if tipo == "tema" and _clave(nombre) in temas_por_id:
+                experiencias.append({"tipo": "tema", "id": _clave(nombre), "nombre": temas_por_id[_clave(nombre)]["titulo"]})
+            elif tipo in ("molecula", "mol") and (_clave(nombre) in mols or _clave(Path(nombre).stem) in mols):
+                m = mols.get(_clave(nombre)) or mols[_clave(Path(nombre).stem)]
+                experiencias.append({"tipo": "molecula", "id": m["id"], "nombre": m["nombre"]})
+            else:
+                avisos.append(f"Rutas, fila {r} ('{titulo}'): no encontré «{linea.strip()}» (usa «Tema: título» o «Molécula: nombre», exactos).")
+
+        preguntas = []
+        for i in range(1, 10):
+            texto = celda(r, f"pregunta-{i}")
+            if not texto:
+                continue
+            opciones = [o.strip() for o in re.split(r"[\r\n]+", celda(r, f"opciones-{i}", crudo=True)) if o.strip()]
+            letra = celda(r, f"correcta-{i}").strip().upper()[:1]
+            correcta = "ABCDEF".find(letra)
+            if len(opciones) < 2 or not (0 <= correcta < len(opciones)):
+                avisos.append(f"Rutas, fila {r} ('{titulo}'): la pregunta {i} necesita opciones (una por línea) y la letra correcta.")
+                continue
+            preguntas.append({"texto": texto, "opciones": opciones, "correcta": correcta,
+                              "explicacion": celda(r, f"explicacion-{i}") or None})
+
+        guia = None
+        nombre_pdf = celda(r, "guia-pdf")
+        if nombre_pdf:
+            origen = CARPETA_GUIAS / Path(nombre_pdf).name
+            if origen.is_file():
+                carpeta_g.mkdir(exist_ok=True)
+                shutil.copy2(origen, carpeta_g / origen.name)
+                guia = f"ra/guias/{origen.name}"
+            else:
+                avisos.append(f"Rutas, fila {r} ('{titulo}'): no está el PDF ra/guias/{Path(nombre_pdf).name}.")
+
+        if not experiencias:
+            avisos.append(f"Rutas, fila {r} ('{titulo}'): no tiene experiencias válidas — se omite.")
+            continue
+        if not preguntas:
+            avisos.append(f"Rutas, fila {r} ('{titulo}'): no tiene preguntas; se completará con un botón «Terminé».")
+
+        ruta_d = rutas.setdefault(rid, {"id": rid, "nombre": ruta, "titulo": f"RA para aprender {ruta.lower()}", "viajes": []})
+        vid = f"{rid}-{_clave(titulo)}"
+        if any(v["id"] == vid for v in ruta_d["viajes"]):
+            avisos.append(f"Rutas, fila {r}: el viaje '{titulo}' está repetido — se omite.")
+            continue
+        ruta_d["viajes"].append({
+            "id": vid,
+            "orden": orden,
+            "titulo": titulo,
+            "icono": _clave(celda(r, "icono")) or None,
+            "intro": celda(r, "introduccion") or None,
+            "experiencias": experiencias,
+            "guia": guia,
+            "preguntas": preguntas,
+        })
+    for ruta_d in rutas.values():
+        ruta_d["viajes"].sort(key=lambda v: v["orden"])
+    if rutas:
+        print("   rutas: " + ", ".join(f"{r['nombre']} ({len(r['viajes'])} viajes)" for r in rutas.values()))
+    return list(rutas.values())
+
+
 def generar(salida: Path, avisos: list[str]) -> dict | None:
     if not EXCEL_RA.exists():
         return None
@@ -491,6 +601,7 @@ def generar(salida: Path, avisos: list[str]) -> dict | None:
         guia = "ra/marcadores/guia_marcadores.pdf" if pdf else ""
 
     moleculas = leer_moleculas(wb, destino, avisos)
+    rutas = leer_rutas(wb, destino, avisos, temas, moleculas)
 
     ra = {
         "tipoCodigo": TIPO_CODIGO,
@@ -499,6 +610,7 @@ def generar(salida: Path, avisos: list[str]) -> dict | None:
         "categorias": categorias,
         "temas": temas,
         "moleculas": moleculas,
+        "rutas": rutas,
     }
     (destino / "temas.json").write_text(json.dumps(ra, ensure_ascii=False), encoding="utf-8")
     total_kb = sum(v["kb"] for v in pub.hechos.values() if v)
