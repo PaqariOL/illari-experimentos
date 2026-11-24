@@ -17,6 +17,12 @@
   const BITRATE_VIDEO = 3_000_000;
   const BITRATE_AUDIO = 96_000;
   const MP4_MUXER = 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js';
+  const VERSION = '2026-11-24';
+  // Tamaños que se prueban para el MP4 (lado largo). Muchos celulares solo codifican H.264 hasta
+  // 1920×1088 en horizontal: un video vertical de 1280 de alto puede no estar permitido.
+  const LADOS_MP4 = [1280, 1088, 960, 720, 640];
+  const CODECS_H264 = ['avc1.42001f', 'avc1.4d001f', 'avc1.640028', 'avc1.42002a', 'avc1.4d0028'];
+  const pasoDe16 = (v) => Math.max(16, Math.round(v / 16) * 16);
 
   // ---------------------------------------------------------------- utilidades
   function descargar(archivo) {
@@ -84,6 +90,27 @@
         const r = await VideoEncoder.isConfigSupported(cfg);
         if (r.supported) return r.config || cfg;
       } catch (e) { /* se prueba el siguiente */ }
+    }
+    return null;
+  }
+
+  // Busca un tamaño que el codificador H.264 del celular acepte. Primero vertical (como la pantalla);
+  // si no, el mismo video acostado y marcado para que el reproductor lo gire (rotación 90°).
+  async function planMP4(W, H) {
+    if (!('VideoEncoder' in window) || !('VideoFrame' in window)) return null;
+    const largo = Math.max(W, H);
+    const intentos = [];
+    for (const girar of [false, true]) {
+      for (const lado of LADOS_MP4) {
+        const k = Math.min(window.devicePixelRatio || 1, lado / largo);
+        let w = pasoDe16(W * k), h = pasoDe16(H * k);
+        if (girar) { if (w === h) continue; [w, h] = [h, w]; }
+        const clave = w + 'x' + h;
+        if (intentos.includes(clave)) continue;
+        intentos.push(clave);
+        const vcfg = await configuracionH264(w, h);
+        if (vcfg) return { vcfg, w, h, girar };
+      }
     }
     return null;
   }
@@ -156,7 +183,16 @@
     }
 
     // ---------- Opción principal: WebCodecs + mp4-muxer → MP4 real (H.264 + AAC/Opus)
-    async function iniciarMP4(c, g, W, H, k, vcfg, Mp4Muxer) {
+    async function iniciarMP4(plan, Mp4Muxer) {
+      const W = window.innerWidth, H = window.innerHeight;
+      const { vcfg, girar } = plan;
+      // c = lienzo que se codifica; p = lienzo vertical donde se dibuja la escena (el mismo si no se gira)
+      const c = document.createElement('canvas');
+      c.width = plan.w; c.height = plan.h;
+      const p = girar ? document.createElement('canvas') : c;
+      if (girar) { p.width = plan.h; p.height = plan.w; }
+      const g = p.getContext('2d'), gc = c.getContext('2d');
+      const kx = p.width / W, ky = p.height / H;
       const audio = await pedirMicrofono(op);
       let lector = null, primerAudio = null, acfg = null;
       if (audio && 'MediaStreamTrackProcessor' in window) {
@@ -176,7 +212,7 @@
 
       const muxer = new Mp4Muxer.Muxer({
         target: new Mp4Muxer.ArrayBufferTarget(),
-        video: { codec: 'avc', width: c.width, height: c.height, frameRate: CUADROS },
+        video: { codec: 'avc', width: c.width, height: c.height, frameRate: CUADROS, rotation: girar ? 90 : 0 },
         audio: acfg ? { codec: acfg.nombre, sampleRate: acfg.cfg.sampleRate, numberOfChannels: acfg.cfg.numberOfChannels } : undefined,
         fastStart: 'in-memory',
         firstTimestampBehavior: 'offset',
@@ -214,8 +250,13 @@
         const ahora = performance.now();
         if (ultimo >= 0 && ahora - ultimo < 1000 / CUADROS - 4) return;
         ultimo = ahora;
-        g.setTransform(k, 0, 0, k, 0, 0);
+        g.setTransform(kx, 0, 0, ky, 0, 0);
         try { op.componer(g, W, H); } catch (e) { /* un cuadro fallido no detiene la grabación */ }
+        if (girar) {
+          // se guarda acostado (90° a la izquierda); el reproductor lo endereza con la marca de rotación
+          gc.setTransform(0, -1, 1, 0, 0, c.height);
+          gc.drawImage(p, 0, 0);
+        }
         if (venc.state !== 'configured' || venc.encodeQueueSize > 4) return; // el celular va lento: se salta el cuadro
         // tiempo en microsegundos desde el inicio: nunca negativo y siempre creciente
         const ts = Math.max(tsAnterior + 1, Math.round((ahora - t0) * 1000), 0);
@@ -254,7 +295,7 @@
           sesion = null;
         }
       }
-      return { detener, tipo: 'mp4-webcodecs' };
+      return { detener, tipo: 'mp4-webcodecs' + (girar ? '-girado' : '') + ' ' + c.width + 'x' + c.height };
     }
 
     // ---------- Respaldo: MediaRecorder
@@ -290,6 +331,10 @@
         flujo.getTracks().forEach((t) => t.stop());
         sesion = null;
         guardar(new Blob(partes, { type: formato[0].split(';')[0] }), formato[1]);
+        if (formato[1] === 'webm') {
+          const firefox = /Firefox|FxiOS/.test(navigator.userAgent);
+          setTimeout(() => op.avisar(firefox ? 'Firefox graba en WebM. Para MP4 abre la RA en Google Chrome.' : 'Este navegador solo grabó en WebM. Actualiza Google Chrome.'), 2500);
+        }
       };
       rec.start(1000);
       raf = requestAnimationFrame(dibujar);
@@ -303,11 +348,15 @@
       iniciando = true;
       try {
         const W0 = window.innerWidth, H0 = window.innerHeight;
-        const { c, g, W, H, escala: k } = lienzo(Math.min(window.devicePixelRatio || 1, LADO_MAX_VIDEO / Math.max(W0, H0)));
-        const vcfg = await configuracionH264(c.width, c.height);
+        const plan = await planMP4(W0, H0);
         let Mux = null;
-        if (vcfg) { try { Mux = await cargarMuxer(); } catch (e) { Mux = null; } }
-        sesion = vcfg && Mux ? await iniciarMP4(c, g, W, H, k, vcfg, Mux) : await iniciarMediaRecorder(c, g, W, H, k);
+        if (plan) { try { Mux = await cargarMuxer(); } catch (e) { Mux = null; } }
+        if (plan && Mux) {
+          sesion = await iniciarMP4(plan, Mux);
+        } else {
+          const { c, g, W, H, escala: k } = lienzo(Math.min(window.devicePixelRatio || 1, LADO_MAX_VIDEO / Math.max(W0, H0)));
+          sesion = await iniciarMediaRecorder(c, g, W, H, k);
+        }
       } finally {
         iniciando = false;
       }
@@ -321,5 +370,32 @@
     };
   }
 
-  window.IllariCaptura = { foto, grabadora, descargar, dibujarVideoCubriendo, MAX_SEGUNDOS, configuracionH264 };
+  // Para diagnostico-video.html: qué puede grabar este navegador
+  async function diagnostico() {
+    const W = window.innerWidth, H = window.innerHeight;
+    const r = { version: VERSION, navegador: navigator.userAgent, pantalla: W + '×' + H + ' @' + (window.devicePixelRatio || 1),
+      webcodecs: 'VideoEncoder' in window, audioDesdeMicrofono: 'MediaStreamTrackProcessor' in window, h264: [], audio: [], mediaRecorder: [] };
+    if (r.webcodecs) {
+      for (const [w, h] of [[576, 1280], [720, 1280], [1280, 720], [480, 1088], [1088, 480], [432, 960], [960, 432], [320, 720], [720, 320], [640, 480]]) {
+        const cfg = await configuracionH264(w, h);
+        r.h264.push(w + 'x' + h + ': ' + (cfg ? 'sí (' + cfg.codec + ')' : 'no'));
+      }
+    }
+    if ('AudioEncoder' in window) {
+      for (const codec of ['mp4a.40.2', 'opus']) {
+        try { r.audio.push(codec + ': ' + ((await AudioEncoder.isConfigSupported({ codec, sampleRate: 48000, numberOfChannels: 1, bitrate: BITRATE_AUDIO })).supported ? 'sí' : 'no')); }
+        catch (e) { r.audio.push(codec + ': error'); }
+      }
+    }
+    if (typeof MediaRecorder !== 'undefined') {
+      for (const t of ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/webm;codecs=h264', 'video/webm;codecs=vp8,opus'])
+        r.mediaRecorder.push(t + ': ' + (MediaRecorder.isTypeSupported(t) ? 'sí' : 'no'));
+    }
+    try { await cargarMuxer(); r.empaquetadorMP4 = 'cargado'; } catch (e) { r.empaquetadorMP4 = 'no se pudo cargar'; }
+    const plan = await planMP4(W, H);
+    r.resultado = plan ? 'MP4 ' + plan.w + 'x' + plan.h + (plan.girar ? ' (girado)' : '') : 'WebM / MediaRecorder';
+    return r;
+  }
+
+  window.IllariCaptura = { foto, grabadora, descargar, dibujarVideoCubriendo, MAX_SEGUNDOS, configuracionH264, planMP4, diagnostico, VERSION };
 })();

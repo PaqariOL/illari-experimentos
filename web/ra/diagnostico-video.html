@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Diagnóstico de video · Illari OpenLab</title>
+<style>
+  :root { --fondo: #B8E3E9; --azul: #1B2F6E; }
+  html, body { margin: 0; background: var(--fondo); color: #111; font-family: system-ui, -apple-system, Roboto, sans-serif; }
+  main { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { font-size: 20px; color: var(--azul); margin: 0 0 6px; }
+  .tarjeta { background: rgba(255,255,255,.75); border-radius: 16px; padding: 16px; margin-top: 12px; }
+  .veredicto { font-size: 18px; font-weight: 800; }
+  .ok { color: #1E7B34; } .mal { color: #B22318; }
+  dl { margin: 0; font-size: 13px; }
+  dt { font-weight: 700; margin-top: 10px; }
+  dd { margin: 2px 0 0; word-break: break-word; }
+  p { font-size: 14px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Diagnóstico de video</h1>
+  <p>Revisa en qué formato puede grabar este navegador. Toma una captura de pantalla de esta página y envíala si los videos salen en WebM.</p>
+  <div class="tarjeta"><div id="veredicto" class="veredicto">Revisando…</div></div>
+  <div class="tarjeta"><dl id="datos"></dl></div>
+</main>
+<script src="captura.js"></script>
+<script>
+(async () => {
+  const r = await IllariCaptura.diagnostico();
+  const v = document.getElementById('veredicto');
+  const mp4 = r.resultado.startsWith('MP4');
+  v.textContent = (mp4 ? '✓ Los videos se guardarán en ' : '✗ Los videos se guardarán en ') + r.resultado;
+  v.className = 'veredicto ' + (mp4 ? 'ok' : 'mal');
+  if (!mp4 && /Firefox|FxiOS/.test(navigator.userAgent)) v.textContent += ' — estás en Firefox: abre esta página en Google Chrome.';
+  const filas = [
+    ['Versión de la grabadora', r.version],
+    ['Navegador', r.navegador],
+    ['Pantalla', r.pantalla],
+    ['WebCodecs (VideoEncoder)', r.webcodecs ? 'sí' : 'no'],
+    ['Audio del micrófono para MP4', r.audioDesdeMicrofono ? 'sí' : 'no'],
+    ['Empaquetador MP4', r.empaquetadorMP4],
+    ['H.264 por tamaño', r.h264.join('\n') || '—'],
+    ['Audio', r.audio.join('\n') || '—'],
+    ['MediaRecorder', r.mediaRecorder.join('\n') || '—'],
+  ];
+  const dl = document.getElementById('datos');
+  for (const [t, d] of filas) {
+    const dt = document.createElement('dt'); dt.textContent = t;
+    const dd = document.createElement('dd'); dd.style.whiteSpace = 'pre-line'; dd.textContent = d;
+    dl.append(dt, dd);
+  }
+})();
+</script>
+</body>
+</html>
