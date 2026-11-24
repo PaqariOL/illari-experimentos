@@ -17,7 +17,7 @@
   const BITRATE_VIDEO = 3_000_000;
   const BITRATE_AUDIO = 96_000;
   const MP4_MUXER = 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js';
-  const VERSION = '2026-11-24b';
+  const VERSION = '2026-11-24c';
   // Tamaños que se prueban para el MP4 (lado largo). Muchos celulares solo codifican H.264 hasta
   // 1920×1088 en horizontal: un video vertical de 1280 de alto puede no estar permitido.
   const LADOS_MP4 = [1280, 1088, 960, 720, 640];
@@ -122,6 +122,61 @@
     return lista;
   }
 
+  // Algunos codificadores (Chrome en Windows y en muchos Android) entregan los trozos sin duración
+  // (duration = null) y mp4-muxer los rechaza. En ese caso se copian los datos y se pasa una duración.
+  const DURACION_CUADRO = Math.round(1e6 / CUADROS);
+  function agregarVideo(muxer, chunk, meta) {
+    if (typeof chunk.duration === 'number' && chunk.duration >= 0) return muxer.addVideoChunk(chunk, meta);
+    const datos = new Uint8Array(chunk.byteLength);
+    chunk.copyTo(datos);
+    muxer.addVideoChunkRaw(datos, chunk.type, chunk.timestamp, DURACION_CUADRO, meta);
+  }
+  function agregarAudio(muxer, chunk, meta, duracion) {
+    if (typeof chunk.duration === 'number' && chunk.duration >= 0) return muxer.addAudioChunk(chunk, meta);
+    const datos = new Uint8Array(chunk.byteLength);
+    chunk.copyTo(datos);
+    muxer.addAudioChunkRaw(datos, chunk.type, chunk.timestamp, duracion, meta);
+  }
+  // duración de un trozo de audio codificado: AAC = 1024 muestras; Opus = 20 ms
+  const duracionAudio = (acfg) => (acfg.nombre === 'aac' ? Math.round((1024 * 1e6) / acfg.cfg.sampleRate) : 20000);
+
+  // Audio en un hilo aparte (Worker): la escena 3D y el detector de manos ocupan el hilo principal y,
+  // si el audio se lee ahí, el micrófono pierde trozos y el sonido queda más corto que el video.
+  const CODIGO_AUDIO = `
+    let fin = Infinity, desde = 0;
+    onmessage = async (ev) => {
+      const m = ev.data;
+      if (m.tipo === 'parar') { fin = m.fin; return; }
+      if (m.tipo !== 'inicio') return;
+      desde = m.desde;
+      try {
+        const enc = new AudioEncoder({
+          output: (c, meta) => {
+            const d = new Uint8Array(c.byteLength); c.copyTo(d);
+            postMessage({ tipo: 'trozo', datos: d, clase: c.type, ts: c.timestamp, dur: c.duration, meta: meta && meta.decoderConfig ? { decoderConfig: meta.decoderConfig } : undefined }, [d.buffer]);
+          },
+          error: (e) => postMessage({ tipo: 'error', texto: String(e && e.message || e) }),
+        });
+        enc.configure(m.cfg);
+        const lector = m.flujo.getReader();
+        while (true) {
+          const r = await lector.read();
+          if (r.done) break;
+          const d = r.value;
+          if (d.timestamp >= fin) { d.close(); break; }
+          if (d.timestamp < desde) { d.close(); continue; } // audio de antes de empezar a grabar
+          try { enc.encode(d); } catch (e) {}
+          d.close();
+        }
+        try { lector.cancel(); } catch (e) {}
+        await enc.flush();
+        enc.close();
+      } catch (e) {
+        postMessage({ tipo: 'error', texto: String(e && e.message || e) });
+      }
+      postMessage({ tipo: 'fin' });
+    };`;
+
   const conLimite = (promesa, ms, motivo) => Promise.race([promesa, new Promise((_, mal) => setTimeout(() => mal(new Error(motivo)), ms))]);
   const textoError = (e) => String((e && (e.message || e.name)) || e || 'error').slice(0, 120);
   let ultimoError = '';
@@ -143,21 +198,21 @@
       });
       let cuadros = 0;
       venc = new VideoEncoder({
-        output: (chunk, meta) => { try { muxer.addVideoChunk(chunk, meta); cuadros++; } catch (e) { error = error || e; } },
+        output: (chunk, meta) => { try { agregarVideo(muxer, chunk, meta); cuadros++; } catch (e) { error = error || e; } },
         error: (e) => { error = error || e; },
       });
       venc.configure(plan.vcfg);
       for (let i = 0; i < 3; i++) {
         g.fillStyle = i % 2 ? '#B8E3E9' : '#1B2F6E';
         g.fillRect(0, 0, c.width, c.height);
-        const f = new VideoFrame(c, { timestamp: i * 33333 });
+        const f = new VideoFrame(c, { timestamp: i * DURACION_CUADRO, duration: DURACION_CUADRO });
         venc.encode(f, { keyFrame: i === 0 });
         f.close();
       }
       await conLimite(venc.flush(), 5000, 'el codificador de video no respondió');
       if (acfg) {
         aenc = new AudioEncoder({
-          output: (chunk, meta) => { try { muxer.addAudioChunk(chunk, meta); } catch (e) { error = error || e; } },
+          output: (chunk, meta) => { try { agregarAudio(muxer, chunk, meta, duracionAudio(acfg)); } catch (e) { error = error || e; } },
           error: (e) => { error = error || e; },
         });
         aenc.configure(acfg.cfg);
@@ -260,7 +315,8 @@
       if (girar) { p.width = plan.h; p.height = plan.w; }
       const g = p.getContext('2d'), gc = c.getContext('2d');
       const kx = p.width / W, ky = p.height / H;
-      const { audio, lector, primerAudio, acfg } = sonido;
+      const { audio, primerAudio, acfg } = sonido;
+      let lector = sonido.lector;
 
       const muxer = new Mp4Muxer.Muxer({
         target: new Mp4Muxer.ArrayBufferTarget(),
@@ -271,34 +327,68 @@
       });
       let fallo = null;
       const venc = new VideoEncoder({
-        output: (chunk, meta) => { try { muxer.addVideoChunk(chunk, meta); } catch (e) { if (!fallo) { fallo = e; detener(); } } },
+        output: (chunk, meta) => { try { agregarVideo(muxer, chunk, meta); } catch (e) { if (!fallo) { fallo = e; detener(); } } },
         error: (e) => { if (!fallo) { fallo = e; detener(); } },
       });
       venc.configure(vcfg);
-      let aenc = null;
-      if (acfg) {
-        aenc = new AudioEncoder({ output: (chunk, meta) => { try { muxer.addAudioChunk(chunk, meta); } catch (e) { /* se pierde ese trozo de audio */ } }, error: () => { aenc = null; } });
-        aenc.configure(acfg.cfg);
+      const t0 = performance.now(); // inicio de la grabación (video y audio)
+      let aenc = null, trabajador = null, finAudio = Infinity, alTerminarAudio = null;
+      const audioListo = new Promise((ok) => { alTerminarAudio = ok; });
+      const durAudio = acfg ? duracionAudio(acfg) : 0;
+      const agregarAudioRaw = (m) => {
+        try { muxer.addAudioChunkRaw(m.datos, m.clase, m.ts, typeof m.dur === 'number' && m.dur >= 0 ? m.dur : durAudio, m.meta); }
+        catch (e) { /* se pierde ese trozo de audio */ }
+      };
+
+      // Opción 1: audio en un Worker
+      if (acfg && lector && sonido.flujo && typeof Worker !== 'undefined') {
+        let url = null;
+        try {
+          lector.releaseLock();
+          url = URL.createObjectURL(new Blob([CODIGO_AUDIO], { type: 'text/javascript' }));
+          trabajador = new Worker(url);
+          trabajador.onmessage = (ev) => {
+            const m = ev.data;
+            if (m.tipo === 'trozo') agregarAudioRaw(m);
+            else if (m.tipo === 'error') console.warn('audio:', m.texto);
+            else if (m.tipo === 'fin') alTerminarAudio();
+          };
+          trabajador.postMessage({ tipo: 'inicio', flujo: sonido.flujo, cfg: acfg.cfg, desde: t0 * 1000 }, [sonido.flujo]);
+          lector = null;
+          if (primerAudio) primerAudio.close();
+        } catch (e) {
+          // el navegador no permite pasar el micrófono al Worker: se usa el hilo principal
+          if (trabajador) { trabajador.terminate(); trabajador = null; }
+          try { lector = sonido.flujo.getReader(); } catch (e2) { lector = null; }
+        } finally {
+          if (url) setTimeout(() => URL.revokeObjectURL(url), 5000);
+        }
       }
 
-      // audio: se lee y codifica mientras dure la grabación
-      let leyendo = !!(lector && aenc);
-      if (leyendo) {
+      // Opción 2: audio en el hilo principal
+      let leyendo = false;
+      if (!trabajador && acfg && lector) {
+        aenc = new AudioEncoder({ output: (chunk, meta) => { try { agregarAudio(muxer, chunk, meta, durAudio); } catch (e) { /* se pierde ese trozo */ } }, error: () => { aenc = null; } });
+        aenc.configure(acfg.cfg);
+        leyendo = true;
         (async () => {
           let d = primerAudio;
-          while (leyendo && d) {
-            try { if (aenc && aenc.state === 'configured') aenc.encode(d); } catch (e) {}
+          while (leyendo && d && d.timestamp < finAudio) {
+            try { if (aenc && aenc.state === 'configured' && d.timestamp >= t0 * 1000) aenc.encode(d); } catch (e) {}
             d.close();
             const r = await lector.read();
             d = r.done ? null : r.value;
           }
           if (d) d.close();
+          alTerminarAudio();
         })();
-      } else if (primerAudio) primerAudio.close();
+      } else if (!trabajador) {
+        if (primerAudio) primerAudio.close();
+        alTerminarAudio();
+      }
 
       // video: un cuadro cada 1/30 s
       let raf = 0, ultimo = -1, n = 0, activo = true, tsAnterior = -1;
-      const t0 = performance.now();
       const cuadro = () => {
         if (!activo) return;
         raf = requestAnimationFrame(cuadro);
@@ -316,7 +406,7 @@
         // tiempo en microsegundos desde el inicio: nunca negativo y siempre creciente
         const ts = Math.max(tsAnterior + 1, Math.round((ahora - t0) * 1000), 0);
         tsAnterior = ts;
-        const f = new VideoFrame(c, { timestamp: ts });
+        const f = new VideoFrame(c, { timestamp: ts, duration: DURACION_CUADRO });
         venc.encode(f, { keyFrame: n++ % (CUADROS * 2) === 0 });
         f.close();
       };
@@ -331,7 +421,12 @@
         cancelAnimationFrame(raf);
         reloj.parar();
         op.alCambiar('guardando', 0);
+        // se sigue codificando el audio que quedó en espera hasta el momento de parar
+        finAudio = performance.now() * 1000; // las marcas de tiempo del micrófono usan este mismo reloj
+        if (trabajador) trabajador.postMessage({ tipo: 'parar', fin: finAudio });
+        await Promise.race([audioListo, new Promise((ok) => setTimeout(ok, 2500))]);
         leyendo = false;
+        if (trabajador) trabajador.terminate();
         try { lector && (await lector.cancel()); } catch (e) {}
         if (audio) audio.getTracks().forEach((t) => t.stop());
         try {
@@ -406,7 +501,8 @@
       sonido.audio = audio;
       if ('MediaStreamTrackProcessor' in window) {
         try {
-          sonido.lector = new MediaStreamTrackProcessor({ track: audio.getAudioTracks()[0] }).readable.getReader();
+          sonido.flujo = new MediaStreamTrackProcessor({ track: audio.getAudioTracks()[0], maxBufferSize: 300 }).readable; // hasta ~3 s en espera
+          sonido.lector = sonido.flujo.getReader();
           sonido.primerAudio = (await sonido.lector.read()).value || null; // frecuencia y canales reales
           if (sonido.primerAudio) sonido.acfg = await configuracionAudio(sonido.primerAudio.sampleRate, sonido.primerAudio.numberOfChannels);
         } catch (e) { sonido.acfg = null; }
@@ -418,7 +514,7 @@
       if (sonido.primerAudio) { try { sonido.primerAudio.close(); } catch (e) {} }
       try { sonido.lector && sonido.lector.cancel(); } catch (e) {}
       if (sonido.audio) sonido.audio.getTracks().forEach((t) => t.stop());
-      sonido.audio = sonido.lector = sonido.primerAudio = sonido.acfg = null;
+      sonido.audio = sonido.lector = sonido.primerAudio = sonido.acfg = sonido.flujo = null;
     }
 
     let iniciando = false;
