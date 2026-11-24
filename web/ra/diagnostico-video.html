@@ -42,6 +42,7 @@
     ['Audio del micrófono para MP4', r.audioDesdeMicrofono ? 'sí' : 'no'],
     ['Empaquetador MP4', r.empaquetadorMP4],
     ['H.264 por tamaño', r.h264.join('\n') || '—'],
+    ['Prueba real de grabación MP4', (r.pruebas || []).join('\n') || '—'],
     ['Audio', r.audio.join('\n') || '—'],
     ['MediaRecorder', r.mediaRecorder.join('\n') || '—'],
   ];

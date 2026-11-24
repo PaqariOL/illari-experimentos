@@ -17,7 +17,7 @@
   const BITRATE_VIDEO = 3_000_000;
   const BITRATE_AUDIO = 96_000;
   const MP4_MUXER = 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js';
-  const VERSION = '2026-11-24';
+  const VERSION = '2026-11-24b';
   // Tamaños que se prueban para el MP4 (lado largo). Muchos celulares solo codifican H.264 hasta
   // 1920×1088 en horizontal: un video vertical de 1280 de alto puede no estar permitido.
   const LADOS_MP4 = [1280, 1088, 960, 720, 640];
@@ -97,7 +97,12 @@
   // Busca un tamaño que el codificador H.264 del celular acepte. Primero vertical (como la pantalla);
   // si no, el mismo video acostado y marcado para que el reproductor lo gire (rotación 90°).
   async function planMP4(W, H) {
-    if (!('VideoEncoder' in window) || !('VideoFrame' in window)) return null;
+    return (await planesMP4(W, H, 1))[0] || null;
+  }
+
+  async function planesMP4(W, H, maximo = 4) {
+    const lista = [];
+    if (!('VideoEncoder' in window) || !('VideoFrame' in window)) return lista;
     const largo = Math.max(W, H);
     const intentos = [];
     for (const girar of [false, true]) {
@@ -105,14 +110,76 @@
         const k = Math.min(window.devicePixelRatio || 1, lado / largo);
         let w = pasoDe16(W * k), h = pasoDe16(H * k);
         if (girar) { if (w === h) continue; [w, h] = [h, w]; }
+        if (lista.length >= maximo) return lista;
         const clave = w + 'x' + h;
         if (intentos.includes(clave)) continue;
         intentos.push(clave);
         const vcfg = await configuracionH264(w, h);
-        if (vcfg) return { vcfg, w, h, girar };
+        // como máximo la mitad de los intentos por orientación, para probar también el video acostado
+        if (vcfg && lista.filter((x) => x.girar === girar).length < Math.ceil(maximo / 2)) lista.push({ vcfg, w, h, girar });
       }
     }
-    return null;
+    return lista;
+  }
+
+  const conLimite = (promesa, ms, motivo) => Promise.race([promesa, new Promise((_, mal) => setTimeout(() => mal(new Error(motivo)), ms))]);
+  const textoError = (e) => String((e && (e.message || e.name)) || e || 'error').slice(0, 120);
+  let ultimoError = '';
+
+  // Prueba real antes de grabar: codifica 3 cuadros (y 0,3 s de silencio si hay audio) y arma un MP4
+  // pequeño. Algunos celulares dicen que aceptan un formato pero fallan al codificar o al empaquetar.
+  async function probarPlan(plan, Mp4Muxer, acfg) {
+    let venc = null, aenc = null, error = null;
+    try {
+      const c = document.createElement('canvas');
+      c.width = plan.w; c.height = plan.h;
+      const g = c.getContext('2d');
+      const muxer = new Mp4Muxer.Muxer({
+        target: new Mp4Muxer.ArrayBufferTarget(),
+        video: { codec: 'avc', width: plan.w, height: plan.h, frameRate: CUADROS, rotation: plan.girar ? 90 : 0 },
+        audio: acfg ? { codec: acfg.nombre, sampleRate: acfg.cfg.sampleRate, numberOfChannels: acfg.cfg.numberOfChannels } : undefined,
+        fastStart: 'in-memory',
+        firstTimestampBehavior: 'offset',
+      });
+      let cuadros = 0;
+      venc = new VideoEncoder({
+        output: (chunk, meta) => { try { muxer.addVideoChunk(chunk, meta); cuadros++; } catch (e) { error = error || e; } },
+        error: (e) => { error = error || e; },
+      });
+      venc.configure(plan.vcfg);
+      for (let i = 0; i < 3; i++) {
+        g.fillStyle = i % 2 ? '#B8E3E9' : '#1B2F6E';
+        g.fillRect(0, 0, c.width, c.height);
+        const f = new VideoFrame(c, { timestamp: i * 33333 });
+        venc.encode(f, { keyFrame: i === 0 });
+        f.close();
+      }
+      await conLimite(venc.flush(), 5000, 'el codificador de video no respondió');
+      if (acfg) {
+        aenc = new AudioEncoder({
+          output: (chunk, meta) => { try { muxer.addAudioChunk(chunk, meta); } catch (e) { error = error || e; } },
+          error: (e) => { error = error || e; },
+        });
+        aenc.configure(acfg.cfg);
+        const n = Math.round(acfg.cfg.sampleRate / 10), ch = acfg.cfg.numberOfChannels;
+        for (let i = 0; i < 3; i++) {
+          const d = new AudioData({ format: 'f32-planar', sampleRate: acfg.cfg.sampleRate, numberOfFrames: n, numberOfChannels: ch, timestamp: i * 100000, data: new Float32Array(n * ch) });
+          aenc.encode(d);
+          d.close();
+        }
+        await conLimite(aenc.flush(), 5000, 'el codificador de audio no respondió');
+      }
+      if (error) throw error;
+      if (!cuadros) throw new Error('el codificador no entregó cuadros');
+      muxer.finalize();
+      if (!muxer.target.buffer || !muxer.target.buffer.byteLength) throw new Error('MP4 vacío');
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: textoError(e) };
+    } finally {
+      try { venc && venc.state !== 'closed' && venc.close(); } catch (e) {}
+      try { aenc && aenc.state !== 'closed' && aenc.close(); } catch (e) {}
+    }
   }
 
   async function configuracionAudio(sampleRate, numberOfChannels) {
@@ -183,7 +250,7 @@
     }
 
     // ---------- Opción principal: WebCodecs + mp4-muxer → MP4 real (H.264 + AAC/Opus)
-    async function iniciarMP4(plan, Mp4Muxer) {
+    async function iniciarMP4(plan, Mp4Muxer, sonido) {
       const W = window.innerWidth, H = window.innerHeight;
       const { vcfg, girar } = plan;
       // c = lienzo que se codifica; p = lienzo vertical donde se dibuja la escena (el mismo si no se gira)
@@ -193,22 +260,7 @@
       if (girar) { p.width = plan.h; p.height = plan.w; }
       const g = p.getContext('2d'), gc = c.getContext('2d');
       const kx = p.width / W, ky = p.height / H;
-      const audio = await pedirMicrofono(op);
-      let lector = null, primerAudio = null, acfg = null;
-      if (audio && 'MediaStreamTrackProcessor' in window) {
-        try {
-          lector = new MediaStreamTrackProcessor({ track: audio.getAudioTracks()[0] }).readable.getReader();
-          primerAudio = (await lector.read()).value || null; // para saber la frecuencia y los canales reales
-          if (primerAudio) acfg = await configuracionAudio(primerAudio.sampleRate, primerAudio.numberOfChannels);
-        } catch (e) { acfg = null; }
-      }
-      if (audio && !acfg) {
-        if (primerAudio) primerAudio.close();
-        try { lector && lector.cancel(); } catch (e) {}
-        audio.getTracks().forEach((t) => t.stop());
-        lector = null;
-        op.avisar('Grabando sin sonido');
-      }
+      const { audio, lector, primerAudio, acfg } = sonido;
 
       const muxer = new Mp4Muxer.Muxer({
         target: new Mp4Muxer.ArrayBufferTarget(),
@@ -218,11 +270,14 @@
         firstTimestampBehavior: 'offset',
       });
       let fallo = null;
-      const venc = new VideoEncoder({ output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: (e) => { fallo = e; detener(); } });
+      const venc = new VideoEncoder({
+        output: (chunk, meta) => { try { muxer.addVideoChunk(chunk, meta); } catch (e) { if (!fallo) { fallo = e; detener(); } } },
+        error: (e) => { if (!fallo) { fallo = e; detener(); } },
+      });
       venc.configure(vcfg);
       let aenc = null;
       if (acfg) {
-        aenc = new AudioEncoder({ output: (chunk, meta) => muxer.addAudioChunk(chunk, meta), error: () => { aenc = null; } });
+        aenc = new AudioEncoder({ output: (chunk, meta) => { try { muxer.addAudioChunk(chunk, meta); } catch (e) { /* se pierde ese trozo de audio */ } }, error: () => { aenc = null; } });
         aenc.configure(acfg.cfg);
       }
 
@@ -287,8 +342,9 @@
           guardar(new Blob([muxer.target.buffer], { type: 'video/mp4' }), 'mp4');
         } catch (e) {
           console.warn(e);
+          ultimoError = textoError(e);
           op.alCambiar('detenido', 0);
-          op.avisar('No se pudo guardar el video');
+          op.avisar('No se pudo guardar el video (' + ultimoError + ')');
         } finally {
           try { venc.close(); } catch (e) {}
           try { aenc && aenc.close(); } catch (e) {}
@@ -342,21 +398,57 @@
       return { detener, tipo: 'mediarecorder-' + formato[1] };
     }
 
+    // Micrófono para el MP4: se lee con MediaStreamTrackProcessor y se elige AAC u Opus
+    async function prepararSonido() {
+      const sonido = { audio: null, lector: null, primerAudio: null, acfg: null };
+      const audio = await pedirMicrofono(op);
+      if (!audio) return sonido;
+      sonido.audio = audio;
+      if ('MediaStreamTrackProcessor' in window) {
+        try {
+          sonido.lector = new MediaStreamTrackProcessor({ track: audio.getAudioTracks()[0] }).readable.getReader();
+          sonido.primerAudio = (await sonido.lector.read()).value || null; // frecuencia y canales reales
+          if (sonido.primerAudio) sonido.acfg = await configuracionAudio(sonido.primerAudio.sampleRate, sonido.primerAudio.numberOfChannels);
+        } catch (e) { sonido.acfg = null; }
+      }
+      if (!sonido.acfg) { soltarSonido(sonido); op.avisar('Grabando sin sonido'); }
+      return sonido;
+    }
+    function soltarSonido(sonido) {
+      if (sonido.primerAudio) { try { sonido.primerAudio.close(); } catch (e) {} }
+      try { sonido.lector && sonido.lector.cancel(); } catch (e) {}
+      if (sonido.audio) sonido.audio.getTracks().forEach((t) => t.stop());
+      sonido.audio = sonido.lector = sonido.primerAudio = sonido.acfg = null;
+    }
+
     let iniciando = false;
     async function iniciar() {
       if (sesion || iniciando) return;
       iniciando = true;
       try {
         const W0 = window.innerWidth, H0 = window.innerHeight;
-        const plan = await planMP4(W0, H0);
+        const planes = await planesMP4(W0, H0);
         let Mux = null;
-        if (plan) { try { Mux = await cargarMuxer(); } catch (e) { Mux = null; } }
-        if (plan && Mux) {
-          sesion = await iniciarMP4(plan, Mux);
-        } else {
-          const { c, g, W, H, escala: k } = lienzo(Math.min(window.devicePixelRatio || 1, LADO_MAX_VIDEO / Math.max(W0, H0)));
-          sesion = await iniciarMediaRecorder(c, g, W, H, k);
+        if (planes.length) { try { Mux = await cargarMuxer(); } catch (e) { Mux = null; ultimoError = 'no se pudo cargar el empaquetador MP4'; } }
+        if (Mux) {
+          op.alCambiar('preparando', 0);
+          const sonido = await prepararSonido();
+          for (const plan of planes) {
+            let r = await probarPlan(plan, Mux, sonido.acfg);
+            if (!r.ok && sonido.acfg) {
+              // el audio es el problema: se graba el video sin sonido
+              const r2 = await probarPlan(plan, Mux, null);
+              if (r2.ok) { soltarSonido(sonido); op.avisar('Grabando sin sonido'); r = r2; }
+            }
+            if (r.ok) { sesion = await iniciarMP4(plan, Mux, sonido); return; }
+            ultimoError = plan.w + 'x' + plan.h + ': ' + r.error;
+            console.warn('MP4 no disponible', ultimoError);
+          }
+          soltarSonido(sonido);
         }
+        const { c, g, W, H, escala: k } = lienzo(Math.min(window.devicePixelRatio || 1, LADO_MAX_VIDEO / Math.max(W0, H0)));
+        sesion = await iniciarMediaRecorder(c, g, W, H, k);
+        if (!sesion) op.alCambiar('detenido', 0);
       } finally {
         iniciando = false;
       }
@@ -391,11 +483,24 @@
       for (const t of ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/webm;codecs=h264', 'video/webm;codecs=vp8,opus'])
         r.mediaRecorder.push(t + ': ' + (MediaRecorder.isTypeSupported(t) ? 'sí' : 'no'));
     }
-    try { await cargarMuxer(); r.empaquetadorMP4 = 'cargado'; } catch (e) { r.empaquetadorMP4 = 'no se pudo cargar'; }
-    const plan = await planMP4(W, H);
-    r.resultado = plan ? 'MP4 ' + plan.w + 'x' + plan.h + (plan.girar ? ' (girado)' : '') : 'WebM / MediaRecorder';
+    let Mux = null;
+    try { Mux = await cargarMuxer(); r.empaquetadorMP4 = 'cargado'; } catch (e) { r.empaquetadorMP4 = 'no se pudo cargar'; }
+    // prueba real de cada tamaño (sin audio y con audio de 48 kHz)
+    r.pruebas = [];
+    let elegido = null;
+    if (Mux) {
+      const acfg = await configuracionAudio(48000, 1);
+      for (const plan of await planesMP4(W, H)) {
+        const nombre = plan.w + 'x' + plan.h + (plan.girar ? ' girado' : '');
+        const v = await probarPlan(plan, Mux, null);
+        const a = v.ok && acfg ? await probarPlan(plan, Mux, acfg) : null;
+        r.pruebas.push(nombre + ': video ' + (v.ok ? 'OK' : 'falla (' + v.error + ')') + (a ? ' · audio ' + acfg.nombre + ' ' + (a.ok ? 'OK' : 'falla (' + a.error + ')') : ''));
+        if (v.ok && !elegido) elegido = nombre + (a && !a.ok ? ', sin sonido' : '');
+      }
+    }
+    r.resultado = elegido ? 'MP4 ' + elegido : 'WebM / MediaRecorder';
     return r;
   }
 
-  window.IllariCaptura = { foto, grabadora, descargar, dibujarVideoCubriendo, MAX_SEGUNDOS, configuracionH264, planMP4, diagnostico, VERSION };
+  window.IllariCaptura = { foto, grabadora, descargar, dibujarVideoCubriendo, MAX_SEGUNDOS, configuracionH264, planMP4, planesMP4, probarPlan, cargarMuxer, diagnostico, VERSION, ultimoError: () => ultimoError };
 })();
