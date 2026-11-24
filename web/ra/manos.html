@@ -147,6 +147,14 @@ const ELEMENTOS = {
   F: { color: 0x7CD13A, radio: 0.36 }, Cl: { color: 0x1FBF3F, radio: 0.45 }, Br: { color: 0xA62929, radio: 0.48, clara: true },
   I: { color: 0x940094, radio: 0.52, clara: true }, S: { color: 0xF2C200, radio: 0.46 }, P: { color: 0xFF8000, radio: 0.45 },
   B: { color: 0xFFB5B5, radio: 0.38 }, Si: { color: 0xF0C8A0, radio: 0.47 }, Na: { color: 0xAB5CF2, radio: 0.55, clara: true },
+  // metales y otros (colores CPK / Jmol)
+  Li: { color: 0xCC80FF, radio: 0.5, clara: true }, K: { color: 0x8F40D4, radio: 0.6, clara: true }, Cs: { color: 0x57178F, radio: 0.65, clara: true },
+  Mg: { color: 0x8AFF00, radio: 0.48 }, Ca: { color: 0x3DFF00, radio: 0.52 }, Al: { color: 0xBFA6A6, radio: 0.48 },
+  Ti: { color: 0xBFC2C7, radio: 0.48 }, Mn: { color: 0x9C7AC7, radio: 0.47, clara: true }, Fe: { color: 0xE06633, radio: 0.47, clara: true },
+  Co: { color: 0xF090A0, radio: 0.46 }, Ni: { color: 0x50D050, radio: 0.46 }, Cu: { color: 0xC88033, radio: 0.46, clara: true },
+  Zn: { color: 0x7D80B0, radio: 0.46, clara: true }, Se: { color: 0xFFA100, radio: 0.47 }, Zr: { color: 0x94E0E0, radio: 0.5 },
+  Ag: { color: 0xC0C0C0, radio: 0.5 }, Cd: { color: 0xFFD98F, radio: 0.5 }, Pt: { color: 0xD0D0E0, radio: 0.5 },
+  Au: { color: 0xFFD123, radio: 0.5 }, Pb: { color: 0x575961, radio: 0.52, clara: true },
 };
 const aspecto = (el) => ELEMENTOS[el] || { color: 0xFF1493, radio: 0.4, clara: true };
 
@@ -157,6 +165,7 @@ const ENERGIAS = {
   'C-O1': 358, 'C-O2': 745, 'C-O3': 1072, 'C-F1': 485, 'C-Cl1': 339, 'Br-C1': 285, 'C-I1': 213, 'C-S1': 259, 'C-S2': 573,
   'N-N1': 163, 'N-N2': 418, 'N-N3': 945, 'N-O1': 201, 'N-O2': 607, 'O-O1': 146, 'O-O2': 498, 'Cl-Cl1': 242,
   'F-F1': 155, 'Br-Br1': 193, 'I-I1': 151, 'O-S2': 523, 'O-Si1': 452, 'O-P1': 335, 'O-P2': 544,
+  'Si-Si1': 226, 'C-Si1': 318, 'B-F1': 613, 'O-S1': 265,
 };
 const ALFA = { 1: 2.2, 2: 2.6, 3: 2.9 }; // Å⁻¹: forma de la curva de Morse según el orden del enlace
 const SIMBOLO_ORDEN = { 1: '–', 2: '=', 3: '≡' };
